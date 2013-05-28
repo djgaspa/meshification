@@ -37,10 +37,9 @@
 #include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
-Consumer::Consumer(const int w, const int h, const string &address, const string &name) :
+Consumer::Consumer(const string &address, const string &name) :
     ip_address(address),
     name(name),
-    encode(new VideoEncoder(w, h)),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
     cam_params(new aruco::CameraParameters),
@@ -97,6 +96,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         case ID_DISCONNECTION_NOTIFICATION:
             connect();
             std::cerr << "Connection lost" << std::endl;
+            async_video->end();
             encode.reset();
             is_connected = false;
             break;

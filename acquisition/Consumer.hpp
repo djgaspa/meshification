@@ -53,11 +53,17 @@ class Consumer
     void connect();
 
 public:
-    Consumer(const int w, const int h, const std::string& address, const std::string& name = "default");
+    Consumer(const std::string& address, const std::string& name = "default");
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
     void enable_marker_tracking(const bool b) {
         use_marker_tracking = b;
+    }
+    bool is_marker_tracking_enabled() const {
+        return use_marker_tracking;
+    }
+    std::string get_name() const {
+        return name;
     }
     void save_view();
 };

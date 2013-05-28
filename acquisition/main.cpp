@@ -106,7 +106,7 @@ try {
     DepthMeshifier meshify(win, camera_calibration);
     int is_animated = 1;
     bool is_2d_draw_enabled = false, use_color_edges = true, use_marker = false;
-    Consumer consume(width, height, address, name);
+    Consumer consume(address, name);
     char buffer_depth[2 * width * height];
     std::vector<char> buffer_rgb(3 * width * height);
     std::vector<unsigned> tri;
