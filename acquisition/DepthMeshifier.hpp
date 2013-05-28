@@ -36,7 +36,7 @@ class DepthMeshifier
     int dilate_erode_steps;
     int min_contour_area, depth_threshold;
 
-    bool is_draw_2d_enabled;
+    bool m_is_draw_2d_enabled;
     bool use_color_edges;
 
     std::auto_ptr<DepthFilter> filter;
@@ -46,8 +46,14 @@ public:
     DepthMeshifier(const std::string& name, const std::string& calibration);
     ~DepthMeshifier();
     void operator()(char* buffer_rgb, char* buffer_depth, std::vector<unsigned>& tri, std::vector<float>& ver);
+    bool is_2d_draw_enabled() const {
+        return m_is_draw_2d_enabled;
+    }
     void enable_2d_draw(bool enabled = true) {
-        is_draw_2d_enabled = enabled;
+        m_is_draw_2d_enabled = enabled;
+    }
+    bool is_color_edges_enabled() const {
+        return use_color_edges;
     }
     void enable_color_edges(bool enabled = true) {
         use_color_edges = enabled;

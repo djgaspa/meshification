@@ -280,7 +280,7 @@ DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calib
     approx_polygon(2000), min_area(100),
     dilate_erode_steps(2),
     min_contour_area(100), depth_threshold(20),
-    is_draw_2d_enabled(false),
+    m_is_draw_2d_enabled(false),
     use_color_edges(true),
     filter(new DepthFilter(width, height)),
     canny_worker(new AsyncWorker),
@@ -347,7 +347,8 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         c = s == 0 ? 0 : (s * alpha + beta);
     }
     cv::Mat img_color(height, width, CV_8UC3, buffer_rgb), img_gray;
-    if (use_color_edges)
+    const bool canny_color = use_color_edges;
+    if (canny_color == true)
         canny_worker->begin([&img_color, &img_gray, this] {
             cv::cvtColor(img_color, img_gray, CV_RGB2GRAY);
             cv::blur(img_gray, img_gray, cv::Size(3, 3));
@@ -359,7 +360,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     cv::Canny(depth8, depth8, min_threshold, max_threshold, 3, true);
     //my_canny(depth8, depth8, min_threshold, max_threshold, 3, true);
     //cv::bitwise_or(depth8, internal_edges, depth8, mask);
-    if (use_color_edges) {
+    if (canny_color == true) {
         canny_worker->end();
         cv::bitwise_or(depth8, img_gray, depth8, mask);
     }
@@ -385,7 +386,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         cv::imshow("Contours", image_contours);
     }
     triangulate();
-    if (is_draw_2d_enabled)
+    if (m_is_draw_2d_enabled)
         triangulate.draw(img_color);
     const std::vector<cv::Vec6f> triangles = triangulate.get_triangles();
     if (triangles.empty())
