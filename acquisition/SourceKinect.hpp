@@ -27,9 +27,11 @@ class VideoCapture;
 
 class SourceKinect : public Source
 {
-    std::auto_ptr<cv::VideoCapture> kinect;
+    std::unique_ptr<cv::VideoCapture> kinect;
 public:
     SourceKinect(const int id = 0);
     ~SourceKinect();
-    void grab(char* rgb, char* depth);
+    void grab(char* rgb, char* depth) override;
+    int width() const override;
+    int height() const override;
 };

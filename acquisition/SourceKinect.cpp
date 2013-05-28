@@ -41,3 +41,13 @@ void SourceKinect::grab(char* rgb, char* depth)
     std::copy(rgb_mat.ptr(), rgb_mat.ptr() + 3 * 640 * 480, rgb);
     std::copy(depth_mat.ptr(), depth_mat.ptr() + 2 * 640 * 480, depth);
 }
+
+int SourceKinect::width() const
+{
+    return kinect->get(CV_CAP_PROP_FRAME_WIDTH);
+}
+
+int SourceKinect::height() const
+{
+    return kinect->get(CV_CAP_PROP_FRAME_HEIGHT);
+}
