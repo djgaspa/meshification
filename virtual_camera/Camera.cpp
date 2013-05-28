@@ -2,137 +2,8 @@
 #include <cstdlib>
 #include <GL/glew.h>
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include "Camera.hpp"
-
-static bool gluInvertMatrix(const double m[16], double invOut[16])
-{
-    double inv[16], det;
-    int i;
-
-    inv[0] = m[5]  * m[10] * m[15] - 
-             m[5]  * m[11] * m[14] - 
-             m[9]  * m[6]  * m[15] + 
-             m[9]  * m[7]  * m[14] +
-             m[13] * m[6]  * m[11] - 
-             m[13] * m[7]  * m[10];
-
-    inv[4] = -m[4]  * m[10] * m[15] + 
-              m[4]  * m[11] * m[14] + 
-              m[8]  * m[6]  * m[15] - 
-              m[8]  * m[7]  * m[14] - 
-              m[12] * m[6]  * m[11] + 
-              m[12] * m[7]  * m[10];
-
-    inv[8] = m[4]  * m[9] * m[15] - 
-             m[4]  * m[11] * m[13] - 
-             m[8]  * m[5] * m[15] + 
-             m[8]  * m[7] * m[13] + 
-             m[12] * m[5] * m[11] - 
-             m[12] * m[7] * m[9];
-
-    inv[12] = -m[4]  * m[9] * m[14] + 
-               m[4]  * m[10] * m[13] +
-               m[8]  * m[5] * m[14] - 
-               m[8]  * m[6] * m[13] - 
-               m[12] * m[5] * m[10] + 
-               m[12] * m[6] * m[9];
-
-    inv[1] = -m[1]  * m[10] * m[15] + 
-              m[1]  * m[11] * m[14] + 
-              m[9]  * m[2] * m[15] - 
-              m[9]  * m[3] * m[14] - 
-              m[13] * m[2] * m[11] + 
-              m[13] * m[3] * m[10];
-
-    inv[5] = m[0]  * m[10] * m[15] - 
-             m[0]  * m[11] * m[14] - 
-             m[8]  * m[2] * m[15] + 
-             m[8]  * m[3] * m[14] + 
-             m[12] * m[2] * m[11] - 
-             m[12] * m[3] * m[10];
-
-    inv[9] = -m[0]  * m[9] * m[15] + 
-              m[0]  * m[11] * m[13] + 
-              m[8]  * m[1] * m[15] - 
-              m[8]  * m[3] * m[13] - 
-              m[12] * m[1] * m[11] + 
-              m[12] * m[3] * m[9];
-
-    inv[13] = m[0]  * m[9] * m[14] - 
-              m[0]  * m[10] * m[13] - 
-              m[8]  * m[1] * m[14] + 
-              m[8]  * m[2] * m[13] + 
-              m[12] * m[1] * m[10] - 
-              m[12] * m[2] * m[9];
-
-    inv[2] = m[1]  * m[6] * m[15] - 
-             m[1]  * m[7] * m[14] - 
-             m[5]  * m[2] * m[15] + 
-             m[5]  * m[3] * m[14] + 
-             m[13] * m[2] * m[7] - 
-             m[13] * m[3] * m[6];
-
-    inv[6] = -m[0]  * m[6] * m[15] + 
-              m[0]  * m[7] * m[14] + 
-              m[4]  * m[2] * m[15] - 
-              m[4]  * m[3] * m[14] - 
-              m[12] * m[2] * m[7] + 
-              m[12] * m[3] * m[6];
-
-    inv[10] = m[0]  * m[5] * m[15] - 
-              m[0]  * m[7] * m[13] - 
-              m[4]  * m[1] * m[15] + 
-              m[4]  * m[3] * m[13] + 
-              m[12] * m[1] * m[7] - 
-              m[12] * m[3] * m[5];
-
-    inv[14] = -m[0]  * m[5] * m[14] + 
-               m[0]  * m[6] * m[13] + 
-               m[4]  * m[1] * m[14] - 
-               m[4]  * m[2] * m[13] - 
-               m[12] * m[1] * m[6] + 
-               m[12] * m[2] * m[5];
-
-    inv[3] = -m[1] * m[6] * m[11] + 
-              m[1] * m[7] * m[10] + 
-              m[5] * m[2] * m[11] - 
-              m[5] * m[3] * m[10] - 
-              m[9] * m[2] * m[7] + 
-              m[9] * m[3] * m[6];
-
-    inv[7] = m[0] * m[6] * m[11] - 
-             m[0] * m[7] * m[10] - 
-             m[4] * m[2] * m[11] + 
-             m[4] * m[3] * m[10] + 
-             m[8] * m[2] * m[7] - 
-             m[8] * m[3] * m[6];
-
-    inv[11] = -m[0] * m[5] * m[11] + 
-               m[0] * m[7] * m[9] + 
-               m[4] * m[1] * m[11] - 
-               m[4] * m[3] * m[9] - 
-               m[8] * m[1] * m[7] + 
-               m[8] * m[3] * m[5];
-
-    inv[15] = m[0] * m[5] * m[10] - 
-              m[0] * m[6] * m[9] - 
-              m[4] * m[1] * m[10] + 
-              m[4] * m[2] * m[9] + 
-              m[8] * m[1] * m[6] - 
-              m[8] * m[2] * m[5];
-
-    det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-
-    if (det == 0)
-        return false;
-
-    det = 1.0 / det;
-
-    for (i = 0; i < 16; i++)
-        invOut[i] = inv[i] * det;
-
-    return true;
-}
 
 Camera::Camera(const std::string& name, const int w, const int h) :
     name(name),
@@ -146,7 +17,7 @@ Camera::Camera(const std::string& name, const int w, const int h) :
     glBindRenderbuffer(GL_RENDERBUFFER, rbo[0]);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo[0]);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
@@ -156,7 +27,7 @@ Camera::Camera(const std::string& name, const int w, const int h) :
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluPerspective(49.8, static_cast<double>(width) / height, 0.1, 100);
+    gluPerspective(47.925, static_cast<double>(width) / height, 0.5, 10.0);
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix.data());
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -201,21 +72,25 @@ void Camera::get_frame(std::vector<unsigned char>& buffer_rgb, std::vector<float
     glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     for (int i = 0; i < width * height / 2; ++i) {
-	const div_t coord = std::div(i, width);
-	const int x = coord.rem, y = coord.quot, y_inv = height - 1 - y;
-	std::swap(buffer_depth[i], buffer_depth[y_inv * width + x]);
-	for (int j = 0; j < 3; ++j)
-	    std::swap(buffer_rgb[3 * i + j], buffer_rgb[3 * (y_inv * width + x) + j]);
+        const div_t coord = std::div(i, width);
+        const int x = coord.rem, y = coord.quot, y_inv = height - 1 - y;
+        std::swap(buffer_depth[i], buffer_depth[y_inv * width + x]);
+        for (int j = 0; j < 3; ++j)
+            std::swap(buffer_rgb[3 * i + j], buffer_rgb[3 * (y_inv * width + x) + j]);
     }
-    int viewport[4] = {0, 0, width, height};
-    Eigen::Matrix4d id = Eigen::Matrix4d::Identity();
+    Eigen::Map<Eigen::Matrix4d> proj(projection_matrix.data());
+    const auto m = proj.inverse();
     for (unsigned i = 0; i < buffer_depth.size(); ++i) {
-	const std::div_t coords = std::div(i, width);
-	double out[3];
-	gluUnProject(coords.rem, coords.quot, buffer_depth[i], id.data(), projection_matrix.data(), viewport, out + 0, out + 1, out + 2);
-	for (int j = 0; j < 3; ++j)
-	    point_cloud[i * 3 + j] = out[j];
-	point_cloud[i * 3 + 2] *= -1.0f;
+        const std::div_t coords = std::div(i, width);
+        const Eigen::Vector4d p (
+            2.0 * static_cast<double>(coords.rem) / width - 1.0,
+            2.0 * static_cast<double>(height - coords.quot) / height - 1.0,
+            2.0 * static_cast<double>(buffer_depth[i]) - 1.0,
+            1.0
+        );
+        const auto p2 = m * p;
+        for (int j = 0; j < 3; ++j)
+            point_cloud[i * 3 + j] = p2[j] / p2[3];
     }
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -228,10 +103,9 @@ void Camera::get_frame(std::vector<unsigned char>& buffer_rgb, std::vector<float
 
 void Camera::draw(const std::function<void()>& f) const
 {
-    double inv[16];
-    gluInvertMatrix(modelview_matrix.data(), inv);
+    const Eigen::Matrix4d m = Eigen::Map<const Eigen::Matrix4d>(modelview_matrix.data()).inverse();
     glPushMatrix();
-    glMultMatrixd(inv);
+    glMultMatrixd(m.data());
     glColor3fv(color.data());
     f();
     glPopMatrix();
