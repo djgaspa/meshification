@@ -21,6 +21,7 @@
 class Source
 {
 public:
+    virtual ~Source() {}
     virtual void grab(char* rgb, char* depth) = 0;
     virtual int width() const = 0;
     virtual int height() const = 0;
