@@ -17,18 +17,11 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sstream>
-#include <fstream>
-#include <iostream>
 #include <boost/program_options.hpp>
+#include <QApplication>
 #include <opencv/cv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "SourceRaw.hpp"
-#include "SourceKinect.hpp"
-#include "SourceOni.hpp"
-#include "Consumer.hpp"
-#include "DepthMeshifier.hpp"
-#include "../common/AsyncWorker.hpp"
+#include "AcquisitionUI.hpp"
 
 void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& size)
 {
@@ -73,6 +66,7 @@ void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& si
 
 int main(int argc, char** argv)
 try {
+    QApplication app(argc, argv);
     std::string address, name, camera_calibration;
     int width, height, cam_id;
     namespace po = boost::program_options;
@@ -94,71 +88,9 @@ try {
         std::cout << desc << "\n";
         return 1;
     }
-
-    std::auto_ptr<Source> camera(new SourceKinect(cam_id));
-    //std::auto_ptr<Source> camera(std::string(argv[1]) == "-kinect" ? static_cast<Source*>(new SourceKinect(argc > 2 ? std::atoi(argv[2]) : 0)) : std::strcmp(".oni", argv[1] + std::strlen(argv[1]) - 4) == 0 ? static_cast<Source*>(new SourceOni(argv[1])) : static_cast<Source*>(new SourceRaw(width, height, argv[1])));
-    //std::ifstream decompressed_stream("kinect0.depth", std::ios::binary);
-    //if (decompressed_stream.is_open() == false) {
-    //std::cerr << "unable to open the stream to get back the decompressed depth map" << std::endl;
-    //return -1;
-    //}
-    const std::string win = "Point Clout Meshifier";
-    DepthMeshifier meshify(win, camera_calibration);
-    int is_animated = 1;
-    bool is_2d_draw_enabled = false, use_color_edges = true, use_marker = false;
-    Consumer consume(address, name);
-    char buffer_depth[2 * width * height];
-    std::vector<char> buffer_rgb(3 * width * height);
-    std::vector<unsigned> tri;
-    std::vector<float> ver;
-    //std::vector<unsigned short> decompressed_buffer(width * height);
-    AsyncWorker consumer_thread;
-    for (int frame_id = 0;; ++frame_id) {
-        camera->grab(buffer_rgb.data(), buffer_depth);
-        int64_t t_begin = cv::getTickCount();
-        meshify(buffer_rgb.data(), buffer_depth, tri, ver);
-        if (tri.empty() == false) {
-            consumer_thread.begin([=, &consume]{
-                consume(ver, tri, buffer_rgb);
-            });
-        }
-        const double t = (cv::getTickCount() - t_begin) / cv::getTickFrequency() * 1000.0;
-        //decompressed_stream.read((char*)&decompressed_buffer[0], width * height * 2);
-        //::compare(buffer_depth, &decompressed_buffer[0], cv::Size(width, height));
-        std::ostringstream label;
-        label << "Frame: " << frame_id <<  " #T: " << tri.size() / 3 << ' ' << t << "ms";
-        cv::displayStatusBar(win, label.str(), 0);
-        cv::Mat img_color(height, width, CV_8UC3, buffer_rgb.data());
-        cv::cvtColor(img_color, img_color, CV_RGB2BGR);
-        cv::imshow(win, img_color);
-        const int c = cv::waitKey(is_animated);
-        if (c == 27) {
-            break;
-        } else if (c == 's') {
-            std::ostringstream img_filename;
-            img_filename << "img" << std::setw(4) << std::setfill('0') << frame_id << ".jpg";
-            cv::imwrite(img_filename.str(), img_color);
-        } else if (c == 32)
-            is_animated = 1 - is_animated;
-        else if (c == 'd') {
-            is_2d_draw_enabled = !is_2d_draw_enabled;
-            meshify.enable_2d_draw(is_2d_draw_enabled);
-        }
-        else if (c == 'c') {
-            use_color_edges = !use_color_edges;
-            meshify.enable_color_edges(use_color_edges);
-            cv::displayOverlay(win, std::string("Color edge ") + (use_color_edges ? "enabled" : "disabled"), 1000);
-        }
-        else if (c == 'm') {
-            use_marker = !use_marker;
-            consume.enable_marker_tracking(use_marker);
-            cv::displayOverlay(win, std::string("Market tracking ") + (use_marker ? "enabled" : "disabled"), 1000);
-        }
-        else if (c == 'p') {
-            consume.save_view();
-            cv::displayOverlay(win, "Marker view saved.", 1000);
-        }
-    }
+    AcquisitionUI ui;
+    ui.show();
+    return app.exec();
 } catch (const std::exception& e) {
     std::cerr << "Fatal error: " << e.what() << std::endl;
 }

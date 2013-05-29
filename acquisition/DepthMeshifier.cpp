@@ -270,8 +270,7 @@ static void color_edges_callback(int value, void* arg)
     use_color_edges = value == 1 ? true : false;
 }
 
-DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calibration) :
-    name(name),
+DepthMeshifier::DepthMeshifier(const std::string& calibration) :
     width(640), height(480),
     focal_x(540), focal_y(540),
     center_x(width / 2.0), center_y(height / 2.0),
@@ -286,9 +285,7 @@ DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calib
     canny_worker(new AsyncWorker),
     cloud_worker(new AsyncWorker)
 {
-    const char* win = name.c_str();
-    cv::namedWindow(win, CV_WINDOW_AUTOSIZE);
-    cv::createTrackbar("Near Plane:", win, &near_plane, 5000);
+    /*cv::createTrackbar("Near Plane:", win, &near_plane, 5000);
     cv::createTrackbar("Far Plane:", win, &far_plane, 5000);
     cv::createTrackbar("Min Threshold:", win, &min_threshold, 200);
     cv::createTrackbar("Max Threshold:", win, &max_threshold, 600);
@@ -296,7 +293,7 @@ DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calib
     cv::createTrackbar("Min Area:", win, &min_area, 1000);
     cv::createTrackbar("Min Contour Area:", win, &min_contour_area, 1000);
     cv::createTrackbar("Depth Threshold at 2m:", win, &depth_threshold, 200);
-    cv::createTrackbar("Dilate/Erode Steps:", win, &dilate_erode_steps, 10);
+    cv::createTrackbar("Dilate/Erode Steps:", win, &dilate_erode_steps, 10);*/
     cv::FileStorage fs(calibration, cv::FileStorage::READ);
     if (fs.isOpened()) {
         fs["image_width"] >> width;
@@ -314,9 +311,7 @@ DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calib
 }
 
 DepthMeshifier::~DepthMeshifier()
-{
-    cv::destroyWindow(name.c_str());
-}
+{ }
 
 void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vector<unsigned>& tri, std::vector<float>& ver)
 {
