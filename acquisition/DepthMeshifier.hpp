@@ -29,11 +29,6 @@ class DepthMeshifier
 {
     int width, height;
     double focal_x, focal_y, center_x, center_y;
-    int near_plane, far_plane;
-    int min_threshold, max_threshold;
-    int approx_polygon, min_area;
-    int dilate_erode_steps;
-    int min_contour_area, depth_threshold;
 
     bool m_is_draw_2d_enabled;
     bool use_color_edges;
@@ -42,6 +37,12 @@ class DepthMeshifier
     std::unique_ptr<AsyncWorker> canny_worker, cloud_worker;
 
 public:
+    int near_plane, far_plane;
+    int min_threshold, max_threshold;
+    int approx_polygon, min_area;
+    int dilate_erode_steps;
+    int min_contour_area, depth_threshold;
+
     DepthMeshifier(const std::string& calibration);
     ~DepthMeshifier();
     void operator()(char* buffer_rgb, char* buffer_depth, std::vector<unsigned>& tri, std::vector<float>& ver);

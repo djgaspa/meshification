@@ -88,6 +88,31 @@ bool QtAcquisition::isMarkerEnabled() const
     return consume->is_marker_tracking_enabled();
 }
 
+int QtAcquisition::nearPlane() const
+{
+    return meshify->near_plane;
+}
+
+int QtAcquisition::farPlane() const
+{
+    return meshify->far_plane;
+}
+
+int QtAcquisition::minArea() const
+{
+    return meshify->min_area;
+}
+
+int QtAcquisition::minContourArea() const
+{
+    return meshify->min_contour_area;
+}
+
+int QtAcquisition::depthThreshold() const
+{
+    return meshify->depth_threshold;
+}
+
 void QtAcquisition::setBorderColorEnabled(bool e)
 {
     meshify->enable_color_edges(e);
@@ -106,6 +131,31 @@ void QtAcquisition::setMarkerEnabled(bool e)
 void QtAcquisition::saveView()
 {
     consume->save_view();
+}
+
+void QtAcquisition::setNearPlane(int d)
+{
+    meshify->near_plane = d;
+}
+
+void QtAcquisition::setFarPlane(int d)
+{
+    meshify->far_plane = d;
+}
+
+void QtAcquisition::setMinArea(int a)
+{
+    meshify->min_area = a;
+}
+
+void QtAcquisition::setMinContourArea(int a)
+{
+    meshify->min_contour_area = a;
+}
+
+void QtAcquisition::setDepthThreshold(int t)
+{
+    meshify->depth_threshold = t;
 }
 
 void QtAcquisition::setAddress(QString address)

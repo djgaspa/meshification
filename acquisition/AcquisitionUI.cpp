@@ -66,6 +66,16 @@ void AcquisitionUI::on_pb_start_clicked()
     t->connect(ui->actionMarker, SIGNAL(toggled(bool)), SLOT(setMarkerEnabled(bool)));
     t->connect(ui->actionSave_View, SIGNAL(triggered()), SLOT(saveView()));
     t->connect(this, SIGNAL(addressChanged(QString)), SLOT(setAddress(QString)));
+    ui->sb_near_plane->setValue(t->nearPlane());
+    t->connect(ui->sb_near_plane, SIGNAL(valueChanged(int)), SLOT(setNearPlane(int)));
+    ui->sb_far_plane->setValue(t->farPlane());
+    t->connect(ui->sb_far_plane, SIGNAL(valueChanged(int)), SLOT(setFarPlane(int)));
+    ui->sb_min_contour_area->setValue(t->minContourArea());
+    t->connect(ui->sb_min_contour_area, SIGNAL(valueChanged(int)), SLOT(setMinContourArea(int)));
+    ui->sb_depth_threshold->setValue(t->depthThreshold());
+    t->connect(ui->sb_depth_threshold, SIGNAL(valueChanged(int)), SLOT(setDepthThreshold(int)));
+    ui->sb_min_area->setValue(t->minArea());
+    t->connect(ui->sb_min_area, SIGNAL(valueChanged(int)), SLOT(setMinArea(int)));
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
 }

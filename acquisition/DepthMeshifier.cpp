@@ -285,14 +285,10 @@ DepthMeshifier::DepthMeshifier(const std::string& calibration) :
     canny_worker(new AsyncWorker),
     cloud_worker(new AsyncWorker)
 {
-    /*cv::createTrackbar("Near Plane:", win, &near_plane, 5000);
-    cv::createTrackbar("Far Plane:", win, &far_plane, 5000);
-    cv::createTrackbar("Min Threshold:", win, &min_threshold, 200);
+    /*cv::createTrackbar("Min Threshold:", win, &min_threshold, 200);
     cv::createTrackbar("Max Threshold:", win, &max_threshold, 600);
     cv::createTrackbar("Approx DP:", win, &approx_polygon, 4000);
     cv::createTrackbar("Min Area:", win, &min_area, 1000);
-    cv::createTrackbar("Min Contour Area:", win, &min_contour_area, 1000);
-    cv::createTrackbar("Depth Threshold at 2m:", win, &depth_threshold, 200);
     cv::createTrackbar("Dilate/Erode Steps:", win, &dilate_erode_steps, 10);*/
     cv::FileStorage fs(calibration, cv::FileStorage::READ);
     if (fs.isOpened()) {
