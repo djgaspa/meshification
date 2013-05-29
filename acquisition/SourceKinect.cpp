@@ -34,9 +34,14 @@ SourceKinect::~SourceKinect()
 void SourceKinect::grab(char* rgb, char* depth)
 {
     cv::Mat rgb_mat, depth_mat;
-    kinect->grab();
-    kinect->retrieve(rgb_mat, CV_CAP_OPENNI_BGR_IMAGE);
-    kinect->retrieve(depth_mat, CV_CAP_OPENNI_DEPTH_MAP);
+    if (kinect->grab() == false)
+        throw std::runtime_error("Unable to grab frame from device");
+    if (kinect->retrieve(rgb_mat, CV_CAP_OPENNI_BGR_IMAGE) == false)
+        throw std::runtime_error("Unable to retrieve RGB image from the device");
+    if (kinect->retrieve(depth_mat, CV_CAP_OPENNI_DEPTH_MAP) == false)
+        throw std::runtime_error("Unable to retrieve depth image from the device");
+    if (rgb_mat.channels() != 3)
+        throw std::runtime_error("RGB image grabbed from the device is not a 3-channels image");
     cv::cvtColor(rgb_mat, rgb_mat, CV_BGR2RGB);
     std::copy(rgb_mat.ptr(), rgb_mat.ptr() + 3 * 640 * 480, rgb);
     std::copy(depth_mat.ptr(), depth_mat.ptr() + 2 * 640 * 480, depth);
