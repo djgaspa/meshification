@@ -76,6 +76,14 @@ void AcquisitionUI::on_pb_start_clicked()
     t->connect(ui->sb_depth_threshold, SIGNAL(valueChanged(int)), SLOT(setDepthThreshold(int)));
     ui->sb_min_area->setValue(t->minArea());
     t->connect(ui->sb_min_area, SIGNAL(valueChanged(int)), SLOT(setMinArea(int)));
+    ui->sb_min_threshold->setValue(t->minThreshold());
+    t->connect(ui->sb_min_threshold, SIGNAL(valueChanged(int)), SLOT(setMinThreshold(int)));
+    ui->sb_max_threshold->setValue(t->maxThreshold());
+    t->connect(ui->sb_max_threshold, SIGNAL(valueChanged(int)), SLOT(setMaxThreshold(int)));
+    ui->sb_approx_dp->setValue(t->approxDP());
+    t->connect(ui->sb_approx_dp, SIGNAL(valueChanged(int)), SLOT(setApproxDP(int)));
+    ui->sb_dilate_erode->setValue(t->dilateErode());
+    t->connect(ui->sb_dilate_erode, SIGNAL(valueChanged(int)), SLOT(setDilateErode(int)));
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
 }

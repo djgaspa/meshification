@@ -43,6 +43,10 @@ class QtAcquisition : public QObject
     Q_PROPERTY(int minArea READ minContourArea WRITE setMinArea)
     Q_PROPERTY(int minContourArea READ minContourArea WRITE setMinContourArea)
     Q_PROPERTY(int depthThreshold READ depthThreshold WRITE setDepthThreshold)
+    Q_PROPERTY(int minThreshold READ minThreshold WRITE setMinThreshold)
+    Q_PROPERTY(int maxThreshold READ maxThreshold WRITE setMaxThreshold)
+    Q_PROPERTY(int approxDP READ approxDP WRITE setApproxDP)
+    Q_PROPERTY(int dilateErode READ dilateErode WRITE setDilateErode)
 
     std::unique_ptr<Source> camera;
     std::unique_ptr<DepthMeshifier> meshify;
@@ -67,6 +71,10 @@ public:
     int minArea() const;
     int minContourArea() const;
     int depthThreshold() const;
+    int minThreshold() const;
+    int maxThreshold() const;
+    int approxDP() const;
+    int dilateErode() const;
 
 signals:
     void draw(RgbBuffer rgb, int width, int height);
@@ -84,4 +92,8 @@ public slots:
     void setMinArea(int a);
     void setMinContourArea(int a);
     void setDepthThreshold(int t);
+    void setMinThreshold(int t);
+    void setMaxThreshold(int t);
+    void setApproxDP(int a);
+    void setDilateErode(int s);
 };

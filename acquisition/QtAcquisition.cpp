@@ -113,6 +113,26 @@ int QtAcquisition::depthThreshold() const
     return meshify->depth_threshold;
 }
 
+int QtAcquisition::minThreshold() const
+{
+    return meshify->min_threshold;
+}
+
+int QtAcquisition::maxThreshold() const
+{
+    return meshify->max_threshold;
+}
+
+int QtAcquisition::approxDP() const
+{
+    return meshify->approx_polygon;
+}
+
+int QtAcquisition::dilateErode() const
+{
+    return meshify->dilate_erode_steps;
+}
+
 void QtAcquisition::setBorderColorEnabled(bool e)
 {
     meshify->enable_color_edges(e);
@@ -156,6 +176,26 @@ void QtAcquisition::setMinContourArea(int a)
 void QtAcquisition::setDepthThreshold(int t)
 {
     meshify->depth_threshold = t;
+}
+
+void QtAcquisition::setMinThreshold(int t)
+{
+    meshify->min_threshold = t;
+}
+
+void QtAcquisition::setMaxThreshold(int t)
+{
+    meshify->max_threshold = t;
+}
+
+void QtAcquisition::setApproxDP(int a)
+{
+    meshify->approx_polygon = a;
+}
+
+void QtAcquisition::setDilateErode(int s)
+{
+    meshify->dilate_erode_steps = s;
 }
 
 void QtAcquisition::setAddress(QString address)

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>421</width>
-    <height>336</height>
+    <height>484</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -160,6 +160,118 @@
        <widget class="QSlider" name="horizontalSlider_2">
         <property name="maximum">
          <number>5000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Min Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sb_min_threshold">
+        <property name="maximum">
+         <number>200</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider_9">
+        <property name="maximum">
+         <number>200</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_10">
+      <item>
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>Max Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sb_max_threshold">
+        <property name="maximum">
+         <number>600</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider_8">
+        <property name="maximum">
+         <number>600</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
+      <item>
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Approx DP</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sb_approx_dp">
+        <property name="maximum">
+         <number>4000</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider_6">
+        <property name="maximum">
+         <number>4000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_9">
+      <item>
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Dilate/Erode</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sb_dilate_erode">
+        <property name="maximum">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider_7">
+        <property name="maximum">
+         <number>10</number>
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -407,12 +519,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>253</x>
-     <y>250</y>
+     <x>296</x>
+     <y>536</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>252</y>
+     <x>200</x>
+     <y>535</y>
     </hint>
    </hints>
   </connection>
@@ -423,12 +535,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>177</x>
-     <y>265</y>
+     <x>200</x>
+     <y>535</y>
     </hint>
     <hint type="destinationlabel">
-     <x>268</x>
-     <y>263</y>
+     <x>296</x>
+     <y>536</y>
     </hint>
    </hints>
   </connection>
@@ -439,12 +551,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>279</x>
-     <y>295</y>
+     <x>321</x>
+     <y>573</y>
     </hint>
     <hint type="destinationlabel">
-     <x>197</x>
-     <y>289</y>
+     <x>225</x>
+     <y>572</y>
     </hint>
    </hints>
   </connection>
@@ -455,12 +567,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>203</x>
-     <y>285</y>
+     <x>225</x>
+     <y>572</y>
     </hint>
     <hint type="destinationlabel">
-     <x>265</x>
-     <y>290</y>
+     <x>321</x>
+     <y>573</y>
     </hint>
    </hints>
   </connection>
@@ -471,12 +583,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>110</x>
-     <y>218</y>
+     <x>141</x>
+     <y>498</y>
     </hint>
     <hint type="destinationlabel">
-     <x>199</x>
-     <y>223</y>
+     <x>237</x>
+     <y>499</y>
     </hint>
    </hints>
   </connection>
@@ -487,12 +599,140 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>264</x>
-     <y>215</y>
+     <x>237</x>
+     <y>499</y>
     </hint>
     <hint type="destinationlabel">
-     <x>106</x>
-     <y>212</y>
+     <x>141</x>
+     <y>498</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>horizontalSlider_6</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sb_approx_dp</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>179</x>
+     <y>406</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>155</x>
+     <y>406</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sb_approx_dp</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>horizontalSlider_6</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>116</x>
+     <y>404</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>185</x>
+     <y>404</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>horizontalSlider_7</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sb_dilate_erode</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>159</x>
+     <y>437</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sb_dilate_erode</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>horizontalSlider_7</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>128</x>
+     <y>449</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>448</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>horizontalSlider_8</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sb_max_threshold</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>202</x>
+     <y>229</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>139</x>
+     <y>224</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sb_max_threshold</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>horizontalSlider_8</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>179</x>
+     <y>240</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>207</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sb_min_threshold</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>horizontalSlider_9</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>148</x>
+     <y>272</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>213</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>horizontalSlider_9</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sb_min_threshold</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>226</x>
+     <y>289</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>164</x>
+     <y>286</y>
     </hint>
    </hints>
   </connection>
