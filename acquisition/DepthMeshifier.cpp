@@ -27,17 +27,15 @@
 #include "DepthFilter.hpp"
 #include "../common/AsyncWorker.hpp"
 
-using namespace cv;
-
-void my_canny( InputArray _src, OutputArray _dst,
+void my_canny(cv::InputArray _src, cv::OutputArray _dst,
                double low_thresh, double high_thresh,
                int aperture_size, bool L2gradient )
 {
-    Mat src = _src.getMat();
+    cv::Mat src = _src.getMat();
     CV_Assert( src.depth() == CV_8U );
 
     _dst.create(src.size(), CV_8U);
-    Mat dst = _dst.getMat();
+    cv::Mat dst = _dst.getMat();
 
     if (!L2gradient && (aperture_size & CV_CANNY_L2_GRADIENT) == CV_CANNY_L2_GRADIENT)
     {
