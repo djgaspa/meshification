@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <QMetaType>
+#include "QtModelDescriptor.h"
 
 class QTimerEvent;
 class Source;
@@ -54,6 +55,7 @@ class QtAcquisition : public QObject
     std::unique_ptr<AsyncWorker> consumer_worker;
     std::vector<unsigned> tri;
     int width = 640, height = 480;
+    float focal_x, focal_y, center_x, center_y;
     int frame_id = 0;
     int timer_id;
 
@@ -79,6 +81,7 @@ public:
 signals:
     void draw(RgbBuffer rgb, int width, int height);
     void message(QString m);
+    void update(QtModelDescriptor desc);
     
 public slots:
     void setup();

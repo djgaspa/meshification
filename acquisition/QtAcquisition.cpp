@@ -18,7 +18,9 @@
 */
 
 #include <chrono>
+#include <QSharedPointer>
 #include <QTimerEvent>
+#include <opencv2/opencv.hpp>
 #include "QtAcquisition.hpp"
 #include "DepthMeshifier.hpp"
 #include "Consumer.hpp"
@@ -31,9 +33,24 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &address, const
     meshify(new DepthMeshifier(calib)),
     consume(new Consumer(address, std::to_string(cam_id))),
     consumer_worker(new AsyncWorker),
-    width(camera->width()), height(camera->height())
+    width(camera->width()), height(camera->height()),
+    center_x(width / 2), center_y(height / 2),
+    focal_x(540), focal_y(540)
 {
     qRegisterMetaType<RgbBuffer>("RgbBuffer");
+    cv::FileStorage fs(calib, cv::FileStorage::READ);
+    if (fs.isOpened()) {
+        fs["image_width"] >> width;
+        fs["image_height"] >> height;
+        cv::Mat camera_matrix;
+        fs["camera_matrix"] >> camera_matrix;
+        focal_x = camera_matrix.at<double>(0, 0);
+        focal_y = camera_matrix.at<double>(1, 1);
+        center_x = camera_matrix.at<double>(0, 2);
+        center_y = camera_matrix.at<double>(1, 2);
+    } else
+        std::cerr << "WARNING: Unable to open camera calibration file " << calib << ". Using default (inexact) camera matrix." << std::endl;
+    std::cout << "Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
 }
 
 QtAcquisition::~QtAcquisition()
@@ -60,7 +77,12 @@ void QtAcquisition::process_frame()
             (*consume)(ver, tri, buffer_rgb);
         });
     }
-    emit draw(buffer_rgb, width, height);
+    QtModelDescriptor desc {
+        width, height, center_x, center_y, focal_x, focal_y,
+        QVector<float>::fromStdVector(ver), QVector<unsigned>::fromStdVector(tri), QVector<char>::fromStdVector(buffer_rgb)
+    };
+    emit update(desc);
+    emit draw(std::move(buffer_rgb), width, height);
     const auto t1 = clock::now();
     const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
     //decompressed_stream.read((char*)&decompressed_buffer[0], width * height * 2);

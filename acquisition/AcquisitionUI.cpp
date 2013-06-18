@@ -23,18 +23,20 @@
 #include "AcquisitionUI.hpp"
 #include <ui_AcquisitionUI.h>
 #include "QtAcquisition.hpp"
+#include "Viewer.hpp"
 
 AcquisitionUI::AcquisitionUI(QWidget *parent) :
     QMainWindow(parent),
     thread(new QThread(this)),
     ui(new Ui::AcquisitionUI)
 {
+    qRegisterMetaType<QtModelDescriptor>("QtModelDescriptor");
     ui->setupUi(this);
     const QString Octet = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
     ui->le_address->setValidator(new QRegExpValidator(QRegExp("^" + Octet + "\\." + Octet + "\\." + Octet + "\\." + Octet + "$"), this));
     connect(thread, SIGNAL(started()), SLOT(started()));
     connect(thread, SIGNAL(finished()), SLOT(stopped()));
-    thread->connect(ui->pb_start, SIGNAL(clicked()), SLOT(start()));
+    connect(ui->action_Wireframe, SIGNAL(toggled(bool)), ui->viewer, SLOT(setWireframe(bool)));
     thread->connect(ui->pb_stop, SIGNAL(clicked()), SLOT(quit()));
 }
 
@@ -59,6 +61,7 @@ try {
     t->moveToThread(thread);
     connect(thread, SIGNAL(started()), t, SLOT(setup()));
     connect(thread, SIGNAL(finished()), t, SLOT(deleteLater()));
+    thread->start();
     ui->actionColor_Edges->setChecked(t->isBorderColorEnabled());
     ui->actionDraw2D->setChecked(t->isDraw2dEnabled());
     ui->actionMarker->setChecked(t->isMarkerEnabled());
@@ -86,6 +89,7 @@ try {
     ui->sb_dilate_erode->setValue(t->dilateErode());
     t->connect(ui->sb_dilate_erode, SIGNAL(valueChanged(int)), SLOT(setDilateErode(int)));
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
+    connect(t, SIGNAL(update(QtModelDescriptor)), ui->viewer, SLOT(load(QtModelDescriptor)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
 } catch (const std::exception& e) {
     QMessageBox::warning(this, "Device error", e.what());
