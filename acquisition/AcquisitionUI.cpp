@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <QThread>
+#include <QMessageBox>
 #include "AcquisitionUI.hpp"
 #include <ui_AcquisitionUI.h>
 #include "QtAcquisition.hpp"
@@ -53,7 +54,7 @@ void AcquisitionUI::on_le_address_editingFinished()
 }
 
 void AcquisitionUI::on_pb_start_clicked()
-{
+try {
     auto t = new QtAcquisition(0, ui->le_address->text().toStdString(), "cam.yml");
     t->moveToThread(thread);
     connect(thread, SIGNAL(started()), t, SLOT(setup()));
@@ -86,6 +87,8 @@ void AcquisitionUI::on_pb_start_clicked()
     t->connect(ui->sb_dilate_erode, SIGNAL(valueChanged(int)), SLOT(setDilateErode(int)));
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
+} catch (const std::exception& e) {
+    QMessageBox::warning(this, "Device error", e.what());
 }
 
 void AcquisitionUI::draw(RgbBuffer buffer, int width, int height)
