@@ -13,11 +13,7 @@ Viewer::Viewer(QWidget *parent) :
 
 Viewer::~Viewer()
 {
-    glDetachShader(prog, fragment_shader);
-    glDetachShader(prog, vertex_shader);
     glDeleteProgram(prog);
-    glDeleteShader(fragment_shader);
-    glDeleteShader(vertex_shader);
     glDeleteTextures(1, tex);
     glDeleteBuffers(2, vbo);
     glDeleteVertexArrays(1, vao);
@@ -78,7 +74,7 @@ void Viewer::init()
     setSceneRadius(5);
     camera()->fitSphere(qglviewer::Vec(0, 0, 4), 5);
     camera()->setFOVToFitScene();
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     const char* strings[1] {vertex_shader_buffer.data()};
     int len[1] {vertex_shader_buffer.size()};
     glShaderSource(vertex_shader, 1, strings, len);
@@ -92,7 +88,7 @@ void Viewer::init()
         glGetShaderInfoLog(vertex_shader, info_log_length, &info_log_length, info_log.data());
         std::cerr << "Vertex Compilation log:\n" << info_log.data() << std::endl;
     }
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    const GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     strings[0] = fragment_shader_buffer.data();
     len[0] = fragment_shader_buffer.size();
     glShaderSource(fragment_shader, 1, strings, len);
@@ -117,6 +113,10 @@ void Viewer::init()
         glGetProgramInfoLog(prog, info_log_length, &info_log_length, compiler_log.data());
         std::cerr << "Linker log:\n" << compiler_log.data() << std::endl;
     }
+    glDetachShader(prog, fragment_shader);
+    glDetachShader(prog, vertex_shader);
+    glDeleteShader(fragment_shader);
+    glDeleteShader(vertex_shader);
     uniform_camera_width = glGetUniformLocation(prog, "camera_width");
     uniform_camera_height = glGetUniformLocation(prog, "camera_height");
     uniform_camera_focal_x = glGetUniformLocation(prog, "camera_focal_x");
