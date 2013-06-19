@@ -27,13 +27,11 @@ void Viewer::load(QtModelDescriptor data)
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.rgb.data());
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.rgb.data());
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
-    glProgramUniform1i(prog, uniform_camera_width, data.width);
-    glProgramUniform1i(prog, uniform_camera_height, data.height);
     glProgramUniform1f(prog, uniform_camera_focal_x, data.focal_x);
     glProgramUniform1f(prog, uniform_camera_focal_y, data.focal_y);
     glProgramUniform1f(prog, uniform_camera_centre_x, data.center_x);
@@ -67,9 +65,6 @@ void Viewer::init()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     setSceneCenter(qglviewer::Vec(0, 0, 4));
     setSceneRadius(5);
     camera()->fitSphere(qglviewer::Vec(0, 0, 4), 5);
@@ -117,8 +112,6 @@ void Viewer::init()
     glDetachShader(prog, vertex_shader);
     glDeleteShader(fragment_shader);
     glDeleteShader(vertex_shader);
-    uniform_camera_width = glGetUniformLocation(prog, "camera_width");
-    uniform_camera_height = glGetUniformLocation(prog, "camera_height");
     uniform_camera_focal_x = glGetUniformLocation(prog, "camera_focal_x");
     uniform_camera_focal_y = glGetUniformLocation(prog, "camera_focal_y");
     uniform_camera_centre_x = glGetUniformLocation(prog, "camera_centre_x");
@@ -136,14 +129,14 @@ void Viewer::draw()
     camera()->getModelViewProjectionMatrix(mvp_matrix.data());
     Eigen::Matrix4f m = mvp_matrix.cast<float>();
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glUseProgram(prog);
     glUniformMatrix4fv(uniform_mvp_matrix, 1, GL_FALSE, m.data());
     glBindVertexArray(vao[0]);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
     glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
 
