@@ -95,17 +95,16 @@ VideoDecoder::~VideoDecoder()
 
 void VideoDecoder::operator()(std::istream& in, unsigned char* buffer)
 {
-    vpx_image_t* frame;
-    while ((frame = vpx_codec_get_frame(&p_->ctx, &p_->iter)) == 0) {
-	if (!in) {
-	    std::cerr << "Error reading from video stream" << std::endl;
-	}
-	unsigned size;
-	in.read((char*)&size, sizeof(size));
-	std::vector<unsigned char> tmp(size);
-	in.read((char*)&tmp[0], tmp.size());
-	check(vpx_codec_decode(&p_->ctx, &tmp[0], tmp.size(), 0, 0));
-	p_->iter = 0;
-    }
+    if (!in)
+        throw std::logic_error("Error reading from video stream");
+    unsigned size;
+    in.read((char*)&size, sizeof(size));
+    std::vector<unsigned char> tmp(size);
+    in.read((char*)&tmp[0], tmp.size());
+    check(vpx_codec_decode(&p_->ctx, &tmp[0], tmp.size(), 0, 0));
+    p_->iter = 0;
+    auto* frame = vpx_codec_get_frame(&p_->ctx, &p_->iter);
+    if (frame == 0)
+        throw std::logic_error("Error decoding VPX stream. Frame not available.");
     yuv2rgb(frame, buffer, 0);
 }
