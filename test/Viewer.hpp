@@ -4,7 +4,7 @@
 
 class Viewer : public QGLViewer
 {
-    Q_OBJECT;
+    Q_OBJECT
 
     const int width, height;
 

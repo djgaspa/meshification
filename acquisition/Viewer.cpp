@@ -139,7 +139,6 @@ void Viewer::draw()
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
-
 bool Viewer::wireframe() const
 {
     GLint v;
