@@ -1,7 +1,7 @@
 find_package(Boost COMPONENTS program_options REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Qt4 COMPONENTS QtCore QtGui QtXml QtOpenGl)
-find_library(QGLVIEWER_LIBRARY NAMES qglviewer-qt4 QGLViewer2)
+find_library(QGLVIEWER_LIBRARY NAMES qglviewer-qt4 QGLViewer QGLViewer2)
 find_library(GLEW_LIBRARY NAMES GLEW glew32)
 
 include(${QT_USE_FILE})
