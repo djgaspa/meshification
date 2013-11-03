@@ -2,10 +2,90 @@
 #include <iostream>
 #include <fstream>
 #include <GL/glew.h>
+#include <oglplus/all.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include "Model.hpp"
 #include "Data3d.hpp"
+
+namespace {
+
+class Program
+{
+    oglplus::Program p;
+    Program();
+public:
+    ~Program();
+    static Program& instance();
+    void use(const bool b);
+};
+
+Program::Program()
+try {
+    oglplus::VertexShader vs;
+    vs.Source(
+                "#version 430 core\n"
+                "layout(location = 0) uniform float camera_focal_x;\n"
+                "layout(location = 1) uniform float camera_focal_y;\n"
+                "layout(location = 2) uniform float camera_centre_x;\n"
+                "layout(location = 3) uniform float camera_centre_y;\n"
+                "layout(location = 4) uniform mat4 mvp_matrix;\n"
+                "layout(location = 8) uniform sampler2DRect camera_texture;\n"
+                "layout(location = 0) in vec3 vertex;\n"
+                "out vec2 tex_coord;\n"
+
+                "void main()\n"
+                "{\n"
+                "    vec4 v = vec4(vertex, 1.0f);\n"
+                "    ivec2 size = textureSize(camera_texture);\n"
+                "    gl_Position = mvp_matrix * v;\n"
+                "    tex_coord.s = size[0] - (camera_focal_x * v.x / v.z + camera_centre_x);\n"
+                "    tex_coord.t = camera_focal_y * v.y / v.z + camera_centre_y;\n"
+                "}\n"
+                ).Compile();
+    oglplus::FragmentShader fs;
+    fs.Source(
+                "#version 430 core\n"
+                "layout(location = 8) uniform sampler2DRect camera_texture;\n"
+                "in vec2 tex_coord;\n"
+                "layout(location = 0) out vec4 frag_color;\n"
+
+                "void main()\n"
+                "{\n"
+                "    frag_color = texture(camera_texture, tex_coord);\n"
+                "}\n"
+                ).Compile();
+    p.AttachShader(vs).AttachShader(fs).Link().DetachShader(fs).DetachShader(vs);
+} catch(const oglplus::ProgramBuildError& pbe) {
+    std::cerr <<
+                 "Program build error (in " <<
+                 pbe.GLSymbol() << ", " <<
+                 pbe.ClassName() << " '" <<
+                 pbe.ObjectDescription() << "'): " <<
+                 pbe.what() << std::endl <<
+                 pbe.Log() << std::endl;
+    pbe.Cleanup();
+}
+
+Program::~Program()
+{
+}
+
+Program& Program::instance()
+{
+    static Program prog;
+    return prog;
+}
+
+void Program::use(const bool b)
+{
+    if (b)
+        p.Use();
+    else
+        p.UseNone();
+}
+
+}
 
 Model::Model()
 {
@@ -16,13 +96,13 @@ Model::Model()
     Eigen::Matrix4f::Map(&matrix[0]).setIdentity();
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    //glEnableClientState(GL_NORMAL_ARRAY);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
 Model::~Model()
@@ -46,15 +126,24 @@ void Model::draw() const
     GLint front_face;
     glGetIntegerv(GL_FRONT_FACE, &front_face);
     glFrontFace(GL_CW);
+    Program::instance().use(true);
+    float mv[16], pr[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, mv);
+    glGetFloatv(GL_PROJECTION_MATRIX, pr);
+    Eigen::Map<Eigen::Matrix4f> view_matrix(mv), proj_matrix(pr);
+    const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
+    glUniformMatrix4fv(4, 1, GL_FALSE, mvp_matrix.data());
     glBindVertexArray(vao[0]);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glPushMatrix();
     glMultMatrixf(model_matrix);
     glMultMatrixf(matrix);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glPopMatrix();
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
+    Program::instance().use(false);
     glFrontFace(front_face);
 }
 
@@ -78,18 +167,20 @@ void Model::load(const Data3d& data)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * data.tri.size(), data.tri.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
-    glVertexPointer(3, GL_FLOAT, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.tex.size(), data.tex.data(), GL_STATIC_DRAW);
-    glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    //glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.nor.size(), data.nor.data(), GL_STATIC_DRAW);
-    //glNormalPointer(GL_FLOAT, 0, 0);
-    glBindTexture(GL_TEXTURE_2D, tex[0]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, &data.bgr.front());
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.bgr.data());
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
+    Program::instance().use(true);
+    glUniform1f(0, data.focal_x);
+    glUniform1f(1, data.focal_y);
+    glUniform1f(2, data.center_x);
+    glUniform1f(3, data.center_y);
+    glUniform1i(8, 0);
+    Program::instance().use(false);
 }
 
 void Model::save_view() const

@@ -20,24 +20,6 @@ struct Peer
     VideoDecoder decoder;
 };
 
-static void compute_texture_coordinates(const int width, const int height, const float cx, const float cy, const float fx, const float fy, const std::vector<float>& v, std::vector<float>& tex)
-{
-    pcl::PointCloud<pcl::PointXYZ> cloud;
-    const int n_points = v.size() / 3;
-    cloud.reserve(n_points);
-    for (int i = 0; i < n_points; ++i)
-        cloud.push_back(pcl::PointXYZ(v[3 * i + 0], v[3 * i + 1], v[3 * i + 2]));
-    pcl::RangeImagePlanar range_image;
-    Eigen::Affine3f affine;
-    affine.setIdentity();
-    range_image.createFromPointCloudWithFixedSize(cloud, width, height, cx, cy, fx, fy, affine);
-    for (int i = 0; i < n_points; ++i) {
-        range_image.getImagePoint(v[3 * i], v[3 * i + 1], -v[3 * i + 2], tex[i * 2], tex[i * 2 + 1]);
-        tex[i * 2] /= width;
-        tex[i * 2 + 1] /= -height;
-    }
-}
-
 static void compute_normals(Data3d& data)
 {
     const auto n_elements = data.tri.size();
@@ -124,11 +106,10 @@ void Receiver::run()
                 RakNet::RakString name;
                 bs.Read(name);
                 data->name = name.C_String();
-                float cx, cy, fx, fy;
-                bs.Read(cx);
-                bs.Read(cy);
-                bs.Read(fx);
-                bs.Read(fy);
+                bs.Read(data->center_x);
+                bs.Read(data->center_y);
+                bs.Read(data->focal_x);
+                bs.Read(data->focal_y);
                 bs.Read(data->modelview);
                 int size;
                 bs.Read(size);
@@ -150,20 +131,17 @@ void Receiver::run()
                     const int n_ver = read.getNumVer();
                     data->tri.resize(3 * n_tri);
                     data->ver.resize(3 * n_ver);
-                    data->tex.resize(2 * n_ver);
                     read.getTriangles(&data->tri[0]);
                     read.getAttrib("V", &data->ver[0]);
                 } else {
                     int n_vertices, n_triangles;
                     in.read((char*)&n_vertices, sizeof(n_vertices));
                     data->ver.resize(3 * n_vertices);
-                    data->tex.resize(2 * n_vertices);
                     in.read((char*)&data->ver[0], data->ver.size() * sizeof(float));
                     in.read((char*)&n_triangles, sizeof(n_triangles));
                     data->tri.resize(3 * n_triangles);
                     in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
                 }
-                compute_texture_coordinates(width, height, cx, cy, fx, fy, data->ver, data->tex);
                 //compute_normals(*data);
                 peer->video_worker.end();
                 Lock l(m);
