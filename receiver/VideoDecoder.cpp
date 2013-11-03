@@ -6,65 +6,6 @@
 #include <vpx/vp8dx.h>
 #include "VideoDecoder.hpp"
 
-void yuv2rgb(const vpx_image_t* source, unsigned char* destination, int flags)
-{
-    int sx=source->d_w;
-    int sy=source->d_h;
-
-    int i,j;
-    int y;
-    int u=128;
-    int v=128;
-    int w;
-    int r,g,b;
-    //int size = source->w;
-    int size = source->stride[0];
-    int a=0;int c=0;
-    int c1,c2,c3;
-
-
-    for (j = 0; j < sy; ++j) {
-	for (i = 0; i < sx; ++i) {
-	    if (a == 0) {	
-		w=(i/2+j/2*size/2);
-		u=source->planes[2][w];
-		v=source->planes[1][w];
-		c1=(1140*(v-128))>>10;
-		c2=(581*(v-128) + 395*(u-128))>>10;
-		c3=(2032*(u-128))>>10;
-		a++;
-	    } else
-		a = 0;
-
-	    y=source->planes[0][i+j*size];
-	    r=y +c1; g=y -c2; b=y +c3;
-
-	    if(r>255) r=255;
-	    if(g>255) g=255;
-	    if(b>255) b=255;
-
-	    if(r<0) r=0;
-	    if(g<0) g=0;
-	    if(b<0) b=0;
-
-	    if (flags == 0) {
-		destination[c++]=r;
-		destination[c++]=g;
-		destination[c++]=b;
-		//destination[c++]=255;
-	    } else {
-		if (y < 16)
-		    destination[4*(i+j*sx)+3]=0;
-		else
-		    destination[4*(i+j*sx)+3]=255;
-		destination[4*(i+j*sx)+2]=r;
-		destination[4*(i+j*sx)+1]=g;
-		destination[4*(i+j*sx)+0]=b;
-	    }
-	}
-    }
-}
-
 inline static void check(const vpx_codec_err_t& err)
 {
     if (err)
@@ -93,7 +34,7 @@ VideoDecoder::~VideoDecoder()
     delete p_;
 }
 
-void VideoDecoder::operator()(std::istream& in, unsigned char* buffer)
+void VideoDecoder::operator()(std::istream &in, unsigned char *y_img, unsigned char *u_img, unsigned char *v_img)
 {
     if (!in)
         throw std::logic_error("Error reading from video stream");
@@ -106,5 +47,14 @@ void VideoDecoder::operator()(std::istream& in, unsigned char* buffer)
     auto* frame = vpx_codec_get_frame(&p_->ctx, &p_->iter);
     if (frame == 0)
         throw std::logic_error("Error decoding VPX stream. Frame not available.");
-    yuv2rgb(frame, buffer, 0);
+    const int width = frame->d_w, height = frame->d_h;
+    for (int i = 0; i < width; ++i)
+        for (int j = 0; j < height; ++j)
+           y_img[i + j * width] = frame->planes[0][i + j * frame->stride[0]];
+    const int c_width = width / 2, c_height = height / 2;
+    for (int i = 0; i < c_width; ++i)
+        for (int j = 0; j < c_height; ++j) {
+            v_img[i + j * c_width] = frame->planes[1][i + j * frame->stride[1]];
+            u_img[i + j * c_width] = frame->planes[2][i + j * frame->stride[2]];
+        }
 }

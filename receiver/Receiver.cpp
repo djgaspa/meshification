@@ -121,7 +121,7 @@ void Receiver::run()
                 bs.Read(buffer.data(), size);
                 std::istringstream in_video(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
                 peer->video_worker.begin([&] {
-                    peer->decoder(in_video, &data->bgr[0]);
+                    peer->decoder(in_video, data->y_img.data(), data->u_img.data(), data->v_img.data());
                 });
                 const bool compression = (in.get() != 0);
                 if (compression) {

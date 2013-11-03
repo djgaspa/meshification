@@ -25,19 +25,19 @@ try {
     oglplus::VertexShader vs;
     vs.Source(
                 "#version 430 core\n"
+                "layout(location = 0) in vec3 vertex;\n"
                 "layout(location = 0) uniform float camera_focal_x;\n"
                 "layout(location = 1) uniform float camera_focal_y;\n"
                 "layout(location = 2) uniform float camera_centre_x;\n"
                 "layout(location = 3) uniform float camera_centre_y;\n"
                 "layout(location = 4) uniform mat4 mvp_matrix;\n"
-                "layout(location = 8) uniform sampler2DRect camera_texture;\n"
-                "layout(location = 0) in vec3 vertex;\n"
+                "layout(location = 8) uniform sampler2DRect camera_y;\n"
                 "out vec2 tex_coord;\n"
 
                 "void main()\n"
                 "{\n"
                 "    vec4 v = vec4(vertex, 1.0f);\n"
-                "    ivec2 size = textureSize(camera_texture);\n"
+                "    ivec2 size = textureSize(camera_y);\n"
                 "    gl_Position = mvp_matrix * v;\n"
                 "    tex_coord.s = size[0] - (camera_focal_x * v.x / v.z + camera_centre_x);\n"
                 "    tex_coord.t = camera_focal_y * v.y / v.z + camera_centre_y;\n"
@@ -46,13 +46,21 @@ try {
     oglplus::FragmentShader fs;
     fs.Source(
                 "#version 430 core\n"
-                "layout(location = 8) uniform sampler2DRect camera_texture;\n"
+                "layout(location = 8) uniform sampler2DRect camera_y;\n"
+                "layout(location = 9) uniform sampler2DRect camera_u;\n"
+                "layout(location = 10) uniform sampler2DRect camera_v;\n"
                 "in vec2 tex_coord;\n"
                 "layout(location = 0) out vec4 frag_color;\n"
 
                 "void main()\n"
                 "{\n"
-                "    frag_color = texture(camera_texture, tex_coord);\n"
+                "   const highp float y = texture(camera_y, tex_coord).r;\n"
+                "   const highp float u = texture(camera_u, tex_coord / 2.0).r - 0.5;\n"
+                "   const highp float v = texture(camera_v, tex_coord / 2.0).r - 0.5;\n"
+                "   const highp float r = y + 1.402 * v;\n"
+                "   const highp float g = y - 0.344 * u - 0.714 * v;\n"
+                "   const highp float b = y + 1.772 * u;\n"
+                "   frag_color = vec4(r, g, b, 1.0);\n"
                 "}\n"
                 ).Compile();
     p.AttachShader(vs).AttachShader(fs).Link().DetachShader(fs).DetachShader(vs);
@@ -91,24 +99,25 @@ Model::Model()
 {
     glGenVertexArrays(1, vao);
     glGenBuffers(n_vbo, vbo);
-    glGenTextures(1, tex);
+    glGenTextures(n_tex, tex);
     Eigen::Matrix4f::Map(&model_matrix[0]).setIdentity();
     Eigen::Matrix4f::Map(&matrix[0]).setIdentity();
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    for (int i = 0; i < n_tex; ++i) {
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[i]);
+        glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
 Model::~Model()
 {
     glDeleteBuffers(n_vbo, vbo);
-    glDeleteTextures(1, tex);
+    glDeleteTextures(n_tex, tex);
     glDeleteVertexArrays(1, vao);
 }
 
@@ -134,14 +143,19 @@ void Model::draw() const
     const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
     glUniformMatrix4fv(4, 1, GL_FALSE, mvp_matrix.data());
     glBindVertexArray(vao[0]);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
+    for (int i = 0; i < n_tex; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[i]);
+    }
     glPushMatrix();
     glMultMatrixf(model_matrix);
     glMultMatrixf(matrix);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glPopMatrix();
-    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+    for (int i = 0; i < n_tex; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+    }
     glBindVertexArray(0);
     Program::instance().use(false);
     glFrontFace(front_face);
@@ -169,9 +183,13 @@ void Model::load(const Data3d& data)
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.bgr.data());
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width, data.height, 0, GL_RED, GL_UNSIGNED_BYTE, data.y_img.data());
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[1]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.u_img.data());
+    glBindTexture(GL_TEXTURE_RECTANGLE, tex[2]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.v_img.data());
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
     Program::instance().use(true);
@@ -180,6 +198,8 @@ void Model::load(const Data3d& data)
     glUniform1f(2, data.center_x);
     glUniform1f(3, data.center_y);
     glUniform1i(8, 0);
+    glUniform1i(9, 1);
+    glUniform1i(10, 2);
     Program::instance().use(false);
 }
 

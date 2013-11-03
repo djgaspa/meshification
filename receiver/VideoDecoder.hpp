@@ -11,5 +11,5 @@ class VideoDecoder
 public:
     VideoDecoder();
     ~VideoDecoder();
-    void operator()(std::istream& in, unsigned char* buffer);
+    void operator()(std::istream& in, unsigned char* y_img, unsigned char* u_img, unsigned char* v_img);
 };

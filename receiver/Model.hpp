@@ -5,8 +5,8 @@ class Data3d;
 
 class Model
 {
-    static const int n_vbo = 2;
-    unsigned vao[1], vbo[n_vbo], tex[1];
+    static const int n_vbo = 2, n_tex = 3;
+    unsigned vao[1], vbo[n_vbo], tex[n_tex];
     size_t n_elements = 0;
     float model_matrix[16], matrix[16];
     std::string name;
