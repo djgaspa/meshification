@@ -20,31 +20,6 @@ struct Peer
     VideoDecoder decoder;
 };
 
-static void compute_normals(Data3d& data)
-{
-    const auto n_elements = data.tri.size();
-    if (n_elements == 0)
-        return;
-    const int n_vertices = data.ver.size() / 3;
-    const int n_triangles = data.tri.size() / 3;
-    data.nor.resize(3 * n_vertices);
-    Eigen::Map<const Eigen::MatrixXf> v(&data.ver[0], 3, n_vertices);
-    Eigen::Map<Eigen::MatrixXf> n(data.nor.data(), 3, n_vertices);
-    for (int i = 0; i < n_triangles; ++i) {
-        unsigned int idx[3];
-        for (int j = 0; j < 3; ++j)
-            idx[j] = data.tri[3 * i + j];
-        const Eigen::Vector3f v0 = v.col(idx[0]);
-        const Eigen::Vector3f v1 = v.col(idx[1]);
-        const Eigen::Vector3f v2 = v.col(idx[2]);
-        const Eigen::Vector3f normal = -(v1 - v0).cross(v2 - v0);
-        for (int j = 0; j < 3; ++j)
-            n.col(idx[j]) += normal;
-    }
-    for (int i = 0; i < n_vertices; ++i)
-        n.col(i).normalize();
-}
-
 Receiver::Receiver()
 {}
 
@@ -142,7 +117,6 @@ void Receiver::run()
                     data->tri.resize(3 * n_triangles);
                     in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
                 }
-                //compute_normals(*data);
                 peer->video_worker.end();
                 Lock l(m);
                 updates[p->guid.g] = data;
