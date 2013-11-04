@@ -182,13 +182,25 @@ void Model::load(const Data3d& data)
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    int width, height;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width, data.height, 0, GL_RED, GL_UNSIGNED_BYTE, data.y_img.data());
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex[1]);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.u_img.data());
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex[2]);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.v_img.data());
+    glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE, 0, GL_TEXTURE_HEIGHT, &height);
+    if (width != data.width || height != data.height) {
+        glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width, data.height, 0, GL_RED, GL_UNSIGNED_BYTE, data.y_img.data());
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[1]);
+        glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.u_img.data());
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[2]);
+        glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width / 2, data.height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, data.v_img.data());
+    }
+    else {
+        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, data.width, data.height, GL_RED, GL_UNSIGNED_BYTE, data.y_img.data());
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[1]);
+        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, data.width / 2, data.height / 2, GL_RED, GL_UNSIGNED_BYTE, data.u_img.data());
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex[2]);
+        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, data.width / 2, data.height / 2, GL_RED, GL_UNSIGNED_BYTE, data.v_img.data());
+    }
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
     Program::instance().use(true);
