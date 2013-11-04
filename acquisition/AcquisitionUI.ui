@@ -374,6 +374,7 @@
    <addaction name="actionMarker"/>
    <addaction name="actionSave_View"/>
    <addaction name="action_Wireframe"/>
+   <addaction name="actionBackground_Subtraction"/>
   </widget>
   <action name="actionColor_Edges">
    <property name="checkable">
@@ -434,6 +435,17 @@
    </property>
    <property name="text">
     <string>&amp;Wireframe</string>
+   </property>
+  </action>
+  <action name="actionBackground_Subtraction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Background Subtraction</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggles background subtration</string>
    </property>
   </action>
  </widget>

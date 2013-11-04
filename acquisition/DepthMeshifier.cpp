@@ -310,10 +310,18 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     //(*filter)(buffer_rgb, (unsigned short*)buffer_depth, internal_edges);
     //cv::imshow("Internal Edges", internal_edges);
     cv::Mat depth(height, width, CV_16UC1, buffer_depth), depth8(height, width, CV_8UC1);
+    if (is_background_subtraction_enabled == true) {
+        if (background.empty() == true) {
+            background.resize(width * height);
+            std::copy(depth.begin<unsigned short>(), depth.end<unsigned short>(), background.begin());
+        }
+    }
+    else
+        background.clear();
     unsigned short depth_min = std::numeric_limits<unsigned short>::max(), depth_max = 0;
     for (int i = 0; i < width * height; ++i) {
         unsigned short& d = depth.at<unsigned short>(i);
-        d = (d < near_plane || d > far_plane) ? 0 : d;
+        d = (d < near_plane || d > far_plane || (background.empty() == false && std::abs(d - background[i]) < 100)) ? 0 : d;
         if (d == 0)
             continue;
         depth_min = std::min(d, depth_min);

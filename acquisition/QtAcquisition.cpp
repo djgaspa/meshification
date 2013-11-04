@@ -155,6 +155,11 @@ int QtAcquisition::dilateErode() const
     return meshify->dilate_erode_steps;
 }
 
+bool QtAcquisition::isBackgroundSubtractionEnabled() const
+{
+    return meshify->is_background_subtraction_enabled;
+}
+
 void QtAcquisition::setBorderColorEnabled(bool e)
 {
     meshify->enable_color_edges(e);
@@ -218,6 +223,11 @@ void QtAcquisition::setApproxDP(int a)
 void QtAcquisition::setDilateErode(int s)
 {
     meshify->dilate_erode_steps = s;
+}
+
+void QtAcquisition::setBackgroundSubtractionEnabled(bool e)
+{
+    meshify->is_background_subtraction_enabled = e;
 }
 
 void QtAcquisition::setAddress(QString address)

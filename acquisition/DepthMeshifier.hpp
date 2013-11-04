@@ -35,6 +35,7 @@ class DepthMeshifier
 
     std::auto_ptr<DepthFilter> filter;
     std::unique_ptr<AsyncWorker> canny_worker, cloud_worker;
+    std::vector<unsigned short> background;
 
 public:
     int near_plane, far_plane;
@@ -42,6 +43,7 @@ public:
     int approx_polygon, min_area;
     int dilate_erode_steps;
     int min_contour_area, depth_threshold;
+    bool is_background_subtraction_enabled = false;
 
     DepthMeshifier(const std::string& calibration);
     ~DepthMeshifier();

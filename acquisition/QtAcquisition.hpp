@@ -48,6 +48,7 @@ class QtAcquisition : public QObject
     Q_PROPERTY(int maxThreshold READ maxThreshold WRITE setMaxThreshold)
     Q_PROPERTY(int approxDP READ approxDP WRITE setApproxDP)
     Q_PROPERTY(int dilateErode READ dilateErode WRITE setDilateErode)
+    Q_PROPERTY(bool backgroundSubtractionEnabled READ isBackgroundSubtractionEnabled WRITE setBackgroundSubtractionEnabled)
 
     std::unique_ptr<Source> camera;
     std::unique_ptr<DepthMeshifier> meshify;
@@ -77,6 +78,7 @@ public:
     int maxThreshold() const;
     int approxDP() const;
     int dilateErode() const;
+    bool isBackgroundSubtractionEnabled() const;
 
 signals:
     void draw(RgbBuffer rgb, int width, int height);
@@ -99,4 +101,5 @@ public slots:
     void setMaxThreshold(int t);
     void setApproxDP(int a);
     void setDilateErode(int s);
+    void setBackgroundSubtractionEnabled(bool e);
 };

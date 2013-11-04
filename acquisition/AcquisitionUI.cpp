@@ -69,6 +69,7 @@ try {
     t->connect(ui->actionDraw2D, SIGNAL(toggled(bool)), SLOT(setDraw2dEnabled(bool)));
     t->connect(ui->actionMarker, SIGNAL(toggled(bool)), SLOT(setMarkerEnabled(bool)));
     t->connect(ui->actionSave_View, SIGNAL(triggered()), SLOT(saveView()));
+    t->connect(ui->actionBackground_Subtraction, SIGNAL(toggled(bool)), SLOT(setBackgroundSubtractionEnabled(bool)));
     t->connect(this, SIGNAL(addressChanged(QString)), SLOT(setAddress(QString)));
     ui->sb_near_plane->setValue(t->nearPlane());
     t->connect(ui->sb_near_plane, SIGNAL(valueChanged(int)), SLOT(setNearPlane(int)));
