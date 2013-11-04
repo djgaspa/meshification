@@ -182,7 +182,6 @@ void Model::load(const Data3d& data)
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glActiveTexture(GL_TEXTURE0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R8, data.width, data.height, 0, GL_RED, GL_UNSIGNED_BYTE, data.y_img.data());
