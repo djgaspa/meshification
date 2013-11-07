@@ -9,6 +9,7 @@ class Model
     unsigned vao[1], vbo[n_vbo], tex[n_tex];
     size_t n_elements = 0;
     float model_matrix[16], matrix[16];
+    float focal_x, focal_y, center_x, center_y;
     std::string name;
 
     Model(const Model&);

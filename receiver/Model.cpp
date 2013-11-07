@@ -64,6 +64,11 @@ try {
                 "}\n"
                 ).Compile();
     p.AttachShader(vs).AttachShader(fs).Link().DetachShader(fs).DetachShader(vs);
+    p.Use();
+    glUniform1i(8, 0);
+    glUniform1i(9, 1);
+    glUniform1i(10, 2);
+    p.UseNone();
 } catch(const oglplus::ProgramBuildError& pbe) {
     std::cerr <<
                  "Program build error (in " <<
@@ -144,6 +149,10 @@ void Model::draw() const
     glMultMatrixf(model_matrix);
     glMultMatrixf(matrix);
     Program::instance().use(true);
+    glUniform1f(0, focal_x);
+    glUniform1f(1, focal_y);
+    glUniform1f(2, center_x);
+    glUniform1f(3, center_y);
     float mv[16], pr[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, mv);
     glGetFloatv(GL_PROJECTION_MATRIX, pr);
@@ -203,15 +212,10 @@ void Model::load(const Data3d& data)
     }
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glBindVertexArray(0);
-    Program::instance().use(true);
-    glUniform1f(0, data.focal_x);
-    glUniform1f(1, data.focal_y);
-    glUniform1f(2, data.center_x);
-    glUniform1f(3, data.center_y);
-    glUniform1i(8, 0);
-    glUniform1i(9, 1);
-    glUniform1i(10, 2);
-    Program::instance().use(false);
+    focal_x = data.focal_x;
+    focal_y = data.focal_y;
+    center_x = data.center_x;
+    center_y = data.center_y;
 }
 
 void Model::save_view() const
