@@ -135,13 +135,6 @@ void Model::draw() const
     GLint front_face;
     glGetIntegerv(GL_FRONT_FACE, &front_face);
     glFrontFace(GL_CW);
-    Program::instance().use(true);
-    float mv[16], pr[16];
-    glGetFloatv(GL_MODELVIEW_MATRIX, mv);
-    glGetFloatv(GL_PROJECTION_MATRIX, pr);
-    Eigen::Map<Eigen::Matrix4f> view_matrix(mv), proj_matrix(pr);
-    const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
-    glUniformMatrix4fv(4, 1, GL_FALSE, mvp_matrix.data());
     glBindVertexArray(vao[0]);
     for (int i = 0; i < n_tex; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -150,14 +143,21 @@ void Model::draw() const
     glPushMatrix();
     glMultMatrixf(model_matrix);
     glMultMatrixf(matrix);
+    Program::instance().use(true);
+    float mv[16], pr[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, mv);
+    glGetFloatv(GL_PROJECTION_MATRIX, pr);
+    Eigen::Map<Eigen::Matrix4f> view_matrix(mv), proj_matrix(pr);
+    const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
+    glUniformMatrix4fv(4, 1, GL_FALSE, mvp_matrix.data());
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
+    Program::instance().use(false);
     glPopMatrix();
     for (int i = 0; i < n_tex; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     }
     glBindVertexArray(0);
-    Program::instance().use(false);
     glFrontFace(front_face);
 }
 
