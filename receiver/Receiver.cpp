@@ -52,7 +52,6 @@ void Receiver::run()
     };
     std::unordered_map<std::uint64_t, std::shared_ptr<Peer>> peers;
     while (is_running) {
-        RakSleep(30);
         const auto ptr = peer->Receive();
         if (ptr == 0)
             continue;
