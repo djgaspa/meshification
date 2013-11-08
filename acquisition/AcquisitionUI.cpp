@@ -91,7 +91,7 @@ try {
     t->connect(ui->actionMarker, SIGNAL(toggled(bool)), SLOT(setMarkerEnabled(bool)));
     t->connect(ui->actionSave_View, SIGNAL(triggered()), SLOT(saveView()));
     t->connect(ui->actionBackground_Subtraction, SIGNAL(toggled(bool)), SLOT(setBackgroundSubtractionEnabled(bool)));
-    t->connect(this, SIGNAL(addressChanged(QString)), SLOT(setAddress(QString, QString)));
+    t->connect(this, SIGNAL(addressChanged(QString, QString)), SLOT(setAddress(QString, QString)));
     ui->sb_near_plane->setValue(t->nearPlane());
     t->connect(ui->sb_near_plane, SIGNAL(valueChanged(int)), SLOT(setNearPlane(int)));
     ui->sb_far_plane->setValue(t->farPlane());
