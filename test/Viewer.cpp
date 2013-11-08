@@ -56,21 +56,46 @@ void Viewer::draw()
 void Viewer::keyPressEvent(QKeyEvent* e)
 {
     if (e->key() == Qt::Key_W) {
-	GLint previous_polygon_mode[2];
-	glGetIntegerv(GL_POLYGON_MODE, previous_polygon_mode);
-	const int mode = previous_polygon_mode[0] == GL_LINE ? GL_FILL : GL_LINE;
-	glPolygonMode(GL_FRONT_AND_BACK, mode);
-	updateGL();
+        GLint previous_polygon_mode[2];
+        glGetIntegerv(GL_POLYGON_MODE, previous_polygon_mode);
+        const int mode = previous_polygon_mode[0] == GL_LINE ? GL_FILL : GL_LINE;
+        glPolygonMode(GL_FRONT_AND_BACK, mode);
+        updateGL();
     } else if (e->key() == Qt::Key_T) {
-	if (glIsEnabled(GL_TEXTURE_2D) == GL_TRUE) {
-	    glDisable(GL_TEXTURE_2D);
-	    glEnable(GL_LIGHTING);
-	}
-	else {
-	    glEnable(GL_TEXTURE_2D);
-	    glDisable(GL_LIGHTING);
-	}
-	updateGL();
-    } else
-	QGLViewer::keyPressEvent(e);
+        if (glIsEnabled(GL_TEXTURE_2D) == GL_TRUE) {
+            glDisable(GL_TEXTURE_2D);
+            glEnable(GL_LIGHTING);
+        }
+        else {
+            glEnable(GL_TEXTURE_2D);
+            glDisable(GL_LIGHTING);
+        }
+        updateGL();
+    }
+    else if (e->key() == Qt::Key_0)
+        selected_source = "cam0";
+    else if (e->key() == Qt::Key_1)
+        selected_source = "cam1";
+    else if (e->key() == Qt::Key_2)
+        selected_source = "cam2";
+    else if (e->key() == Qt::Key_3)
+        selected_source = "cam3";
+    else if (e->key() == Qt::Key_R)
+        xvr_receiver_reset_position(selected_source.c_str());
+    else if (e->key() == Qt::Key_S)
+        xvr_receiver_save_view();
+    else if (e->key() == Qt::Key_Up)
+        xvr_receiver_translate(selected_source.c_str(), 0.0, 0.0, 0.01);
+    else if (e->key() == Qt::Key_Down)
+        xvr_receiver_translate(selected_source.c_str(), 0.0, 0.0, -0.01);
+    else if (e->key() == Qt::Key_Left)
+        xvr_receiver_translate(selected_source.c_str(), -0.01, 0.0, 0.0);
+    else if (e->key() == Qt::Key_Right)
+        xvr_receiver_translate(selected_source.c_str(), 0.01, 0.0, 0.0);
+    else if (e->key() == Qt::Key_Q)
+        xvr_receiver_translate(selected_source.c_str(), 0.0, 0.01, 0.0);
+    else if (e->key() == Qt::Key_A)
+        xvr_receiver_translate(selected_source.c_str(), 0.0, -0.01, 0.0);
+    else
+        QGLViewer::keyPressEvent(e);
 }

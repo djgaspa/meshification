@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <QGLViewer/qglviewer.h>
 
 
@@ -7,6 +8,7 @@ class Viewer : public QGLViewer
     Q_OBJECT
 
     const int width, height;
+    std::string selected_source;
 
     void init();
     void draw();
