@@ -27,11 +27,11 @@
 #include "SourceKinect.hpp"
 #include "../common/AsyncWorker.hpp"
 
-QtAcquisition::QtAcquisition(const int cam_id, const std::string &address, const std::string &calib, QObject *parent) :
+QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, const std::string &calib, QObject *parent) :
     QObject(parent),
     camera(new SourceKinect(cam_id)),
     meshify(new DepthMeshifier(calib)),
-    consume(new Consumer(address, std::to_string(cam_id))),
+    consume(new Consumer(address, name)),
     consumer_worker(new AsyncWorker),
     width(camera->width()), height(camera->height()),
     center_x(width / 2), center_y(height / 2),
@@ -230,8 +230,7 @@ void QtAcquisition::setBackgroundSubtractionEnabled(bool e)
     meshify->is_background_subtraction_enabled = e;
 }
 
-void QtAcquisition::setAddress(QString address)
+void QtAcquisition::setAddress(QString name, QString address)
 {
-    const std::string name = consume->get_name();
-    consume.reset(new Consumer(address.toStdString(), name));
+    consume.reset(new Consumer(address.toStdString(), name.toStdString()));
 }

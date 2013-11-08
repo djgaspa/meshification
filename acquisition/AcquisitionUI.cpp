@@ -41,8 +41,10 @@ AcquisitionUI::AcquisitionUI(QWidget *parent) :
     connect(ui->action_Wireframe, SIGNAL(toggled(bool)), ui->viewer, SLOT(setWireframe(bool)));
     thread->connect(ui->pb_stop, SIGNAL(clicked()), SLOT(quit()));
     const auto address = settings->value("receiver_address", "127.0.0.1").toString();
+    const auto name = settings->value("name", "cam").toString();
+    ui->le_name->setText(name);
     ui->le_address->setText(address);
-    emit addressChanged(address);
+    emit addressChanged(name, address);
 }
 
 AcquisitionUI::~AcquisitionUI()
@@ -52,19 +54,31 @@ AcquisitionUI::~AcquisitionUI()
     delete ui;
 }
 
+void AcquisitionUI::on_le_name_editingFinished()
+{
+    if (ui->le_name->isModified() == false)
+        return;
+    ui->le_name->setModified(false);
+    const auto name = ui->le_name->text();
+    settings->setValue("name", name);
+    const auto address = ui->le_address->text();
+    emit addressChanged(name, address);
+}
+
 void AcquisitionUI::on_le_address_editingFinished()
 {
     if (ui->le_address->isModified() == false)
         return;
     ui->le_address->setModified(false);
     const auto address = ui->le_address->text();
-    emit addressChanged(address);
     settings->setValue("receiver_address", address);
+    const auto name = ui->le_name->text();
+    emit addressChanged(name, address);
 }
 
 void AcquisitionUI::on_pb_start_clicked()
 try {
-    auto t = new QtAcquisition(0, ui->le_address->text().toStdString(), "cam.yml");
+    auto t = new QtAcquisition(0, ui->le_name->text().toStdString(), ui->le_address->text().toStdString(), "cam.yml");
     t->moveToThread(thread);
     connect(thread, SIGNAL(started()), t, SLOT(setup()));
     connect(thread, SIGNAL(finished()), t, SLOT(deleteLater()));
@@ -77,7 +91,7 @@ try {
     t->connect(ui->actionMarker, SIGNAL(toggled(bool)), SLOT(setMarkerEnabled(bool)));
     t->connect(ui->actionSave_View, SIGNAL(triggered()), SLOT(saveView()));
     t->connect(ui->actionBackground_Subtraction, SIGNAL(toggled(bool)), SLOT(setBackgroundSubtractionEnabled(bool)));
-    t->connect(this, SIGNAL(addressChanged(QString)), SLOT(setAddress(QString)));
+    t->connect(this, SIGNAL(addressChanged(QString)), SLOT(setAddress(QString, QString)));
     ui->sb_near_plane->setValue(t->nearPlane());
     t->connect(ui->sb_near_plane, SIGNAL(valueChanged(int)), SLOT(setNearPlane(int)));
     ui->sb_far_plane->setValue(t->farPlane());

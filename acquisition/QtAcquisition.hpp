@@ -64,7 +64,7 @@ class QtAcquisition : public QObject
     void process_frame();
 
 public:
-    QtAcquisition(const int cam_id, const std::string& address, const std::string& calib, QObject *parent = 0);
+    QtAcquisition(const int cam_id, const std::string& name, const std::string& address, const std::string& calib, QObject *parent = 0);
     ~QtAcquisition();
     bool isBorderColorEnabled() const;
     bool isDraw2dEnabled() const;
@@ -87,7 +87,7 @@ signals:
     
 public slots:
     void setup();
-    void setAddress(QString address);
+    void setAddress(QString name, QString address);
     void setBorderColorEnabled(bool e);
     void setDraw2dEnabled(bool e);
     void setMarkerEnabled(bool e);

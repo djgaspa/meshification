@@ -48,6 +48,20 @@
        </spacer>
       </item>
       <item>
+       <widget class="QLabel" name="lbl_name">
+        <property name="text">
+         <string>Name:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="le_name">
+        <property name="text">
+         <string>cam</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="lbl_address">
         <property name="text">
          <string>Address:</string>

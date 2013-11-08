@@ -39,6 +39,7 @@ class AcquisitionUI : public QMainWindow
     Ui::AcquisitionUI* ui;
 
 private slots:
+    void on_le_name_editingFinished();
     void on_le_address_editingFinished();
     void on_pb_start_clicked();
     void draw(RgbBuffer buffer, int width, int height);
@@ -51,5 +52,5 @@ public:
     ~AcquisitionUI();
 
 signals:
-    void addressChanged(QString);
+    void addressChanged(QString, QString);
 };
