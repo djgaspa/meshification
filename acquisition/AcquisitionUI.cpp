@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <QThread>
+#include <QSettings>
 #include <QMessageBox>
 #include "AcquisitionUI.hpp"
 #include <ui_AcquisitionUI.h>
@@ -28,6 +29,7 @@
 AcquisitionUI::AcquisitionUI(QWidget *parent) :
     QMainWindow(parent),
     thread(new QThread(this)),
+    settings(new QSettings(QApplication::applicationDirPath() + "/acquisition.ini", QSettings::IniFormat, this)),
     ui(new Ui::AcquisitionUI)
 {
     qRegisterMetaType<QtModelDescriptor>("QtModelDescriptor");
@@ -38,6 +40,9 @@ AcquisitionUI::AcquisitionUI(QWidget *parent) :
     connect(thread, SIGNAL(finished()), SLOT(stopped()));
     connect(ui->action_Wireframe, SIGNAL(toggled(bool)), ui->viewer, SLOT(setWireframe(bool)));
     thread->connect(ui->pb_stop, SIGNAL(clicked()), SLOT(quit()));
+    const auto address = settings->value("receiver_address", "127.0.0.1").toString();
+    ui->le_address->setText(address);
+    emit addressChanged(address);
 }
 
 AcquisitionUI::~AcquisitionUI()
@@ -52,7 +57,9 @@ void AcquisitionUI::on_le_address_editingFinished()
     if (ui->le_address->isModified() == false)
         return;
     ui->le_address->setModified(false);
-    emit addressChanged(ui->le_address->text());
+    const auto address = ui->le_address->text();
+    emit addressChanged(address);
+    settings->setValue("receiver_address", address);
 }
 
 void AcquisitionUI::on_pb_start_clicked()

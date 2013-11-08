@@ -23,6 +23,7 @@
 #include <QString>
 
 class QThread;
+class QSettings;
 
 namespace Ui {
 class AcquisitionUI;
@@ -34,6 +35,7 @@ class AcquisitionUI : public QMainWindow
 {
     Q_OBJECT
     QThread* thread;
+    QSettings* settings;
     Ui::AcquisitionUI* ui;
 
 private slots:
