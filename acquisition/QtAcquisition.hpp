@@ -39,6 +39,7 @@ class QtAcquisition : public QObject
     Q_PROPERTY(bool borderColorEnabled READ isBorderColorEnabled WRITE setBorderColorEnabled)
     Q_PROPERTY(bool draw2dEnabled READ isDraw2dEnabled WRITE setDraw2dEnabled)
     Q_PROPERTY(bool markerEnabled READ isMarkerEnabled WRITE setMarkerEnabled)
+    Q_PROPERTY(double markerSize READ getMarkerSize WRITE setMarkerSize)
     Q_PROPERTY(int nearPlane READ nearPlane WRITE setNearPlane)
     Q_PROPERTY(int farPlane READ farPlane WRITE setFarPlane)
     Q_PROPERTY(int minArea READ minContourArea WRITE setMinArea)
@@ -69,6 +70,7 @@ public:
     bool isBorderColorEnabled() const;
     bool isDraw2dEnabled() const;
     bool isMarkerEnabled() const;
+    double getMarkerSize() const;
     int nearPlane() const;
     int farPlane() const;
     int minArea() const;
@@ -91,6 +93,7 @@ public slots:
     void setBorderColorEnabled(bool e);
     void setDraw2dEnabled(bool e);
     void setMarkerEnabled(bool e);
+    void setMarkerSize(double s);
     void saveView();
     void setNearPlane(int d);
     void setFarPlane(int d);

@@ -42,6 +42,7 @@ class Consumer
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected = false;
+    double marker_size = 0.288;
 
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
@@ -56,6 +57,12 @@ public:
     Consumer(const std::string& address, const std::string& name = "default");
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
+    void set_marker_size(const double s) {
+        marker_size = s;
+    }
+    double get_marker_size() const {
+        return marker_size;
+    }
     void enable_marker_tracking(const bool b) {
         use_marker_tracking = b;
     }

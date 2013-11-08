@@ -110,6 +110,11 @@ bool QtAcquisition::isMarkerEnabled() const
     return consume->is_marker_tracking_enabled();
 }
 
+double QtAcquisition::getMarkerSize() const
+{
+    return consume->get_marker_size();
+}
+
 int QtAcquisition::nearPlane() const
 {
     return meshify->near_plane;
@@ -173,6 +178,11 @@ void QtAcquisition::setDraw2dEnabled(bool e)
 void QtAcquisition::setMarkerEnabled(bool e)
 {
     consume->enable_marker_tracking(e);
+}
+
+void QtAcquisition::setMarkerSize(double s)
+{
+    consume->set_marker_size(s);
 }
 
 void QtAcquisition::saveView()

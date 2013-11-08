@@ -113,6 +113,7 @@ try {
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
     connect(t, SIGNAL(update(QtModelDescriptor)), ui->viewer, SLOT(load(QtModelDescriptor)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
+    t->setMarkerSize(settings->value("marker_size", 0.288).toDouble());
 } catch (const std::exception& e) {
     QMessageBox::warning(this, "Device error", e.what());
 }

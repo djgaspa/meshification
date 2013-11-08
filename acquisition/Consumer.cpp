@@ -129,7 +129,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
         //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
         if (use_marker_tracking)
-            marker_detector->detect(frame, markers, *cam_params, 0.288, false);
+            marker_detector->detect(frame, markers, *cam_params, marker_size, false);
         for (auto& m : markers) {
             m.draw(frame, cv::Scalar(255, 0, 0));
             if (m.id != 45)
