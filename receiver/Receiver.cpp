@@ -43,8 +43,8 @@ void Receiver::run()
 {
     std::unique_ptr<RakNet::RakPeerInterface, decltype(&RakNet::RakPeerInterface::DestroyInstance)> peer(RakNet::RakPeerInterface::GetInstance(), &RakNet::RakPeerInterface::DestroyInstance);
     RakNet::SocketDescriptor socket(12345, 0);
-    peer->Startup(3, &socket, 1);
-    peer->SetMaximumIncomingConnections(3);
+    peer->Startup(5, &socket, 1);
+    peer->SetMaximumIncomingConnections(5);
     peer->SetTimeoutTime(1000, RakNet::UNASSIGNED_SYSTEM_ADDRESS);
     is_running = true;
     auto packet_deleter = [&peer](RakNet::Packet* p) {
