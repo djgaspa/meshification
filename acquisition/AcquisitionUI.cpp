@@ -45,6 +45,7 @@ AcquisitionUI::AcquisitionUI(QWidget *parent) :
     ui->le_name->setText(name);
     ui->le_address->setText(address);
     emit addressChanged(name, address);
+    ui->sb_camera->setValue(settings->value("camera_id", 0).toInt());
 }
 
 AcquisitionUI::~AcquisitionUI()
@@ -78,7 +79,7 @@ void AcquisitionUI::on_le_address_editingFinished()
 
 void AcquisitionUI::on_pb_start_clicked()
 try {
-    auto t = new QtAcquisition(0, ui->le_name->text().toStdString(), ui->le_address->text().toStdString(), "cam.yml");
+    auto t = new QtAcquisition(ui->sb_camera->value(), ui->le_name->text().toStdString(), ui->le_address->text().toStdString(), "cam.yml");
     t->moveToThread(thread);
     connect(thread, SIGNAL(started()), t, SLOT(setup()));
     connect(thread, SIGNAL(finished()), t, SLOT(deleteLater()));
@@ -134,10 +135,13 @@ void AcquisitionUI::started()
 {
     ui->pb_start->setEnabled(false);
     ui->pb_stop->setEnabled(true);
+    ui->sb_camera->setEnabled(false);
+    settings->setValue("camera_id", ui->sb_camera->value());
 }
 
 void AcquisitionUI::stopped()
 {
     ui->pb_start->setEnabled(true);
     ui->pb_stop->setEnabled(false);
+    ui->sb_camera->setEnabled(true);
 }
