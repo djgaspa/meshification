@@ -92,9 +92,9 @@ void Viewer::keyPressEvent(QKeyEvent* e)
         xvr_receiver_translate(selected_source.c_str(), -0.01, 0.0, 0.0);
     else if (e->key() == Qt::Key_Right)
         xvr_receiver_translate(selected_source.c_str(), 0.01, 0.0, 0.0);
-    else if (e->key() == Qt::Key_Q)
+    else if (e->key() == Qt::Key_E)
         xvr_receiver_translate(selected_source.c_str(), 0.0, 0.01, 0.0);
-    else if (e->key() == Qt::Key_A)
+    else if (e->key() == Qt::Key_D)
         xvr_receiver_translate(selected_source.c_str(), 0.0, -0.01, 0.0);
     else
         QGLViewer::keyPressEvent(e);
