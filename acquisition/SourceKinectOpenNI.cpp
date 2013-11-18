@@ -56,6 +56,7 @@ static const std::string xml_config =
 struct SourceKinectOpenNI::Impl
 {
     xn::Context ctx;
+    xn::ProductionNode production_node;
     xn::ImageGenerator image;
     xn::DepthGenerator depth;
 };
@@ -73,6 +74,18 @@ SourceKinectOpenNI::SourceKinectOpenNI(const int id) :
     p(new Impl)
 {
     check(p->ctx.Init());
+    xn::NodeInfoList devicesList;
+    check(p->ctx.EnumerateProductionTrees(XN_NODE_TYPE_DEVICE, nullptr, devicesList, 0));
+    xn::NodeInfoList::Iterator it = devicesList.Begin();
+    for (int i = 0; i < id && it != devicesList.End(); ++i)
+        it++;
+    if (it == devicesList.End()) {
+        std::ostringstream err;
+        err << "CvCapture_OpenNI::CvCapture_OpenNI : Failed device with index " << id;
+        throw std::runtime_error(err.str());
+    }
+    xn::NodeInfo deviceNode = *it;
+    check(p->ctx.CreateProductionTree(deviceNode, p->production_node));
     check(p->ctx.RunXmlScript(xml_config.c_str()));
     check(p->image.Create(p->ctx));
     check(p->depth.Create(p->ctx));
