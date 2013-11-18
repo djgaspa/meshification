@@ -25,12 +25,13 @@
 #include "DepthMeshifier.hpp"
 #include "Consumer.hpp"
 #include "SourceKinect.hpp"
+#include "SourceKinectOpenNI.hpp"
 #include "../common/AsyncWorker.hpp"
 
 QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, const std::string &calib, QObject *parent) :
     QObject(parent),
-    camera(new SourceKinect(cam_id)),
-    meshify(new DepthMeshifier(calib)),
+    camera(new SourceKinectOpenNI(cam_id)),
+    meshify(new DepthMeshifier("calib.yml")),
     consume(new Consumer(address, name)),
     consumer_worker(new AsyncWorker),
     width(camera->width()), height(camera->height()),
@@ -50,7 +51,7 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
         center_y = camera_matrix.at<double>(1, 2);
     } else
         std::cerr << "WARNING: Unable to open camera calibration file " << calib << ". Using default (inexact) camera matrix." << std::endl;
-    std::cout << "Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
+    std::cout << "RGB Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
 }
 
 QtAcquisition::~QtAcquisition()

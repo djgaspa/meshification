@@ -37,6 +37,9 @@ class DepthMeshifier
     std::unique_ptr<AsyncWorker> canny_worker, cloud_worker;
     std::vector<unsigned short> background;
 
+    struct Impl;
+    std::unique_ptr<Impl> p;
+
 public:
     int near_plane, far_plane;
     int min_threshold, max_threshold;

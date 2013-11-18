@@ -74,7 +74,7 @@ try {
     desc.add_options()
             ("help,h", "produce help message")
             ("address,a", po::value<std::string>(&address)->default_value("127.0.0.1"), "Destination address")
-            ("calib,c", po::value<std::string>(&camera_calibration)->default_value("cam.yml"))
+            ("calib,c", po::value<std::string>(&camera_calibration)->default_value("calib.yml"))
             ("width,W", po::value<int>(&width)->default_value(640), "Range image width")
             ("height,H", po::value<int>(&height)->default_value(480), "Range image height")
             ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera")

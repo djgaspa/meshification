@@ -268,6 +268,11 @@ static void color_edges_callback(int value, void* arg)
     use_color_edges = value == 1 ? true : false;
 }
 
+struct DepthMeshifier::Impl
+{
+    cv::Mat camera_matrix, dist_coeffs;
+};
+
 DepthMeshifier::DepthMeshifier(const std::string& calibration) :
     width(640), height(480),
     focal_x(540), focal_y(540),
@@ -281,20 +286,21 @@ DepthMeshifier::DepthMeshifier(const std::string& calibration) :
     use_color_edges(true),
     filter(new DepthFilter(width, height)),
     canny_worker(new AsyncWorker),
-    cloud_worker(new AsyncWorker)
+    cloud_worker(new AsyncWorker),
+    p(new Impl)
 {
     cv::FileStorage fs(calibration, cv::FileStorage::READ);
     if (fs.isOpened()) {
         fs["image_width"] >> width;
         fs["image_height"] >> height;
-        cv::Mat camera_matrix;
-        fs["camera_matrix"] >> camera_matrix;
-        focal_x = camera_matrix.at<double>(0, 0);
-        focal_y = camera_matrix.at<double>(1, 1);
-        center_x = camera_matrix.at<double>(0, 2);
-        center_y = camera_matrix.at<double>(1, 2);
-        std::cout << camera_matrix << std::endl;
-        std::cout << "Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
+        fs["irCameraMatrix"] >> p->camera_matrix;
+        focal_x = p->camera_matrix.at<double>(0, 0);
+        focal_y = p->camera_matrix.at<double>(1, 1);
+        center_x = p->camera_matrix.at<double>(0, 2);
+        center_y = p->camera_matrix.at<double>(1, 2);
+        std::cout << p->camera_matrix << std::endl;
+        std::cout << "IR Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
+        fs["distortion_coefficients"] >> p->dist_coeffs;
     } else
         std::cerr << "WARNING: Unable to open camera calibration file " << calibration << ". Using default (inexact) camera matrix." << std::endl;
 }

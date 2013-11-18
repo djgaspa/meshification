@@ -22,6 +22,7 @@ add_executable(acquisition ${CPP_SRC} ${UI_SRC} ${RC_SRC} main.cpp
     ../common/AsyncWorker.hpp ../common/AsyncWorker.cpp
     SourceRaw.hpp SourceRaw.cpp
     SourceKinect.hpp SourceKinect.cpp
+    SourceKinectOpenNI.hpp SourceKinectOpenNI.cpp
     SourceOni.hpp SourceOni.cpp
     DepthFilter.hpp DepthFilter.cpp
     QtAcquisition.hpp QtAcquisition.cpp
