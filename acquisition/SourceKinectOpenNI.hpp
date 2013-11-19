@@ -19,6 +19,7 @@
 */
 
 #include <memory>
+#include <string>
 #include "Source.hpp"
 
 class SourceKinectOpenNI : public Source
@@ -26,6 +27,7 @@ class SourceKinectOpenNI : public Source
     struct Impl;
     std::unique_ptr<Impl> p;
     static const int width_ = 640, height_ = 480;
+    std::string serial_number;
 
 public:
     SourceKinectOpenNI(const int id = 0);
@@ -33,4 +35,5 @@ public:
     void grab(char* rgb, char* depth) override;
     int width() const override;
     int height() const override;
+    std::string get_serial_number() const;
 };
