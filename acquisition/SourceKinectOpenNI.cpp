@@ -137,7 +137,7 @@ SourceKinectOpenNI::SourceKinectOpenNI(const int id) :
         it++;
     if (it == devicesList.End()) {
         std::ostringstream err;
-        err << "CvCapture_OpenNI::CvCapture_OpenNI : Failed device with index " << id;
+        err << "OpenNI: Device with index " << id << " is not present";
         throw std::runtime_error(err.str());
     }
     xn::NodeInfo deviceNode = *it;
