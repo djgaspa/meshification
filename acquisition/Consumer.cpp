@@ -37,7 +37,7 @@
 #include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
-Consumer::Consumer(const string &address, const string &name) :
+Consumer::Consumer(const std::string& address, const std::string& name, const std::string& calib) :
     ip_address(address),
     name(name),
     peer(RakNet::RakPeerInterface::GetInstance()),
@@ -50,7 +50,7 @@ Consumer::Consumer(const string &address, const string &name) :
     auto socket = RakNet::SocketDescriptor();
     peer->Startup(1, &socket, 1);
     connect();
-    cam_params->readFromXMLFile("calib.yml");
+    cam_params->readFromXMLFile(calib);
     Eigen::Map<Eigen::Matrix4d>(modelview).setIdentity();
     std::ifstream calibration("calibration.txt");
     if (calibration.is_open())

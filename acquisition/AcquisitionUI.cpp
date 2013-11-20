@@ -79,7 +79,7 @@ void AcquisitionUI::on_le_address_editingFinished()
 
 void AcquisitionUI::on_pb_start_clicked()
 try {
-    auto t = new QtAcquisition(ui->sb_camera->value(), ui->le_name->text().toStdString(), ui->le_address->text().toStdString(), "calib.yml");
+    auto t = new QtAcquisition(ui->sb_camera->value(), ui->le_name->text().toStdString(), ui->le_address->text().toStdString());
     t->moveToThread(thread);
     connect(thread, SIGNAL(started()), t, SLOT(setup()));
     connect(thread, SIGNAL(finished()), t, SLOT(deleteLater()));

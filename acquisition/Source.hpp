@@ -18,6 +18,8 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
+
 class Source
 {
 public:
@@ -25,4 +27,7 @@ public:
     virtual void grab(char* rgb, char* depth) = 0;
     virtual int width() const = 0;
     virtual int height() const = 0;
+    virtual std::string get_serial() const {
+        return "unknown";
+    }
 };

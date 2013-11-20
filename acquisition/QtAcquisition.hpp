@@ -52,6 +52,7 @@ class QtAcquisition : public QObject
     Q_PROPERTY(bool backgroundSubtractionEnabled READ isBackgroundSubtractionEnabled WRITE setBackgroundSubtractionEnabled)
 
     std::unique_ptr<Source> camera;
+    const std::string calib_file;
     std::unique_ptr<DepthMeshifier> meshify;
     std::unique_ptr<Consumer> consume;
     std::unique_ptr<AsyncWorker> consumer_worker;
@@ -65,7 +66,7 @@ class QtAcquisition : public QObject
     void process_frame();
 
 public:
-    QtAcquisition(const int cam_id, const std::string& name, const std::string& address, const std::string& calib, QObject *parent = 0);
+    QtAcquisition(const int cam_id, const std::string& name, const std::string& address, QObject *parent = 0);
     ~QtAcquisition();
     bool isBorderColorEnabled() const;
     bool isDraw2dEnabled() const;

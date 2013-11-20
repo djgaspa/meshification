@@ -54,7 +54,7 @@ class Consumer
     void connect();
 
 public:
-    Consumer(const std::string& address, const std::string& name = "default");
+    Consumer(const std::string& address, const std::string& name, const std::string& calib);
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
     void set_marker_size(const double s) {

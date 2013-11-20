@@ -28,18 +28,19 @@
 #include "SourceKinectOpenNI.hpp"
 #include "../common/AsyncWorker.hpp"
 
-QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, const std::string &calib, QObject *parent) :
+QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, QObject *parent) :
     QObject(parent),
     camera(new SourceKinectOpenNI(cam_id)),
-    meshify(new DepthMeshifier("calib.yml")),
-    consume(new Consumer(address, name)),
+    calib_file(camera->get_serial() + ".yml"),
+    meshify(new DepthMeshifier(calib_file)),
+    consume(new Consumer(address, name, calib_file)),
     consumer_worker(new AsyncWorker),
     width(camera->width()), height(camera->height()),
     center_x(width / 2), center_y(height / 2),
     focal_x(540), focal_y(540)
 {
     qRegisterMetaType<RgbBuffer>("RgbBuffer");
-    cv::FileStorage fs(calib, cv::FileStorage::READ);
+    cv::FileStorage fs(calib_file, cv::FileStorage::READ);
     if (fs.isOpened()) {
         fs["image_width"] >> width;
         fs["image_height"] >> height;
@@ -50,7 +51,7 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
         center_x = camera_matrix.at<double>(0, 2);
         center_y = camera_matrix.at<double>(1, 2);
     } else
-        std::cerr << "WARNING: Unable to open camera calibration file " << calib << ". Using default (inexact) camera matrix." << std::endl;
+        std::cerr << "WARNING: Unable to open camera calibration file " << calib_file << ". Using default (inexact) camera matrix." << std::endl;
     std::cout << "RGB Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
 }
 
@@ -243,5 +244,5 @@ void QtAcquisition::setBackgroundSubtractionEnabled(bool e)
 
 void QtAcquisition::setAddress(QString name, QString address)
 {
-    consume.reset(new Consumer(address.toStdString(), name.toStdString()));
+    consume.reset(new Consumer(address.toStdString(), name.toStdString(), calib_file));
 }

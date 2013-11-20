@@ -35,5 +35,5 @@ public:
     void grab(char* rgb, char* depth) override;
     int width() const override;
     int height() const override;
-    std::string get_serial_number() const;
+    std::string get_serial() const override;
 };
