@@ -243,6 +243,7 @@ void saveCalibration(const char *fname)
     std::strftime(date_time, 1024, "%c", tm);
     cv::FileStorage fs(fname, cv::FileStorage::WRITE);
     fs << "calibration_time" << date_time;
+    fs << "serial_number" << kinect->getSerial();
     fs << "image_width" << frameSize.width;
     fs << "image_height" << frameSize.height;
     if (!irCameraMatrix.empty()) fs << "irCameraMatrix" << irCameraMatrix;
@@ -251,8 +252,7 @@ void saveCalibration(const char *fname)
     if (!rgbDistCoeffs.empty()) fs << "distortion_coefficients" << rgbDistCoeffs;
     if (!R.empty()) fs << "R" << R;
     if (!T.empty()) fs << "T" << T;
-    if (!E.empty()) fs << "E" << E;
-    if (!F.empty()) fs << "F" << F;
+    std::cout << "Saved calibration file " << fname << std::endl;
 }
 
 void loadCalibration(const char *fname)
@@ -264,8 +264,6 @@ void loadCalibration(const char *fname)
     fs["distortion_coefficients"] >> rgbDistCoeffs;
     fs["R"] >> R;
     fs["T"] >> T;
-    fs["E"] >> E;
-    fs["F"] >> F;
 
     rvec.create(1, 3, CV_64F);
     if (R.empty() == false)
@@ -285,7 +283,7 @@ int main()
     CalibrationMode mode = CalibrationMode::Ir;
     initCaptureMode(false, false, true);
 
-    int alpha = 5000;
+    int alpha = 2000;
 
     std::stringstream sstream;
 
@@ -320,10 +318,10 @@ int main()
             }
             break;
         case 's':
-            saveCalibration("calib.yml");
+            saveCalibration((kinect->getSerial() + ".yml").c_str());
             break;
         case 'l':
-            loadCalibration("calib.yml");
+            loadCalibration((kinect->getSerial() + ".yml").c_str());
             break;
         case 'q':
             if (mode != CalibrationMode::Stereo) {
@@ -408,7 +406,7 @@ int main()
                 std::cout << "rgbCameraMatrix\n" << rgbCameraMatrix;
                 std::cout << "\nrgbDistCoeffs\n" << rgbDistCoeffs << std::endl;
                 if (!rgbCameraMatrix.empty()) {
-                    undistort(rgbMat, rgbMatUndist, rgbCameraMatrix, rgbDistCoeffs);
+                    cv::undistort(rgbMat, rgbMatUndist, rgbCameraMatrix, rgbDistCoeffs);
 
                     textLine(rgbMatUndist, "undistorted using calibration", 1, textColorBlue);
                     if (rgbObjPoints.size() > 0) {

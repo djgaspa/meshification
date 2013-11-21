@@ -19,6 +19,7 @@
 */
 
 #include <memory>
+#include <string>
 
 class Kinect
 {
@@ -39,4 +40,5 @@ public:
     void startIr();
     void startImage();
     void startDepth();
+    std::string getSerial() const;
 };
