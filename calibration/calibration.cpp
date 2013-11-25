@@ -134,14 +134,28 @@ void overlay(cv::Mat &rgb, cv::Mat &gray, cv::Mat &overlay)
     unsigned char *overlayData = (unsigned char *) overlay.data;
 
     int n = frameSize.width * frameSize.height;
+    int valid_points = 0;
+    std::vector<float> histogram(256);
+    for (int i = 0; i < n; ++i) {
+        if (grayData[i] == 0)
+            continue;
+        ++histogram[grayData[i]];
+        ++valid_points;
+    }
+    for (int i = 1; i < 256; ++i)
+        histogram[i] += histogram[i - 1];
+    for (int i = 1; i < 256; ++i)
+        if (histogram[i] != 0)
+            histogram[i] = (valid_points - histogram[i]) * 255 / valid_points;
     for (int i = 0; i < n; ++i) {
         if (grayData[i] == 0) {
-            //overlayData[3 * i + 0] = grayData[i] == 0 ? 255 : 0;
-            overlayData[3 * i + 1] = (rgbData[3 * i + 0] + rgbData[3 * i + 1] + rgbData[3 * i + 2]) / 3;
-            overlayData[3 * i + 2] = 0;
+            overlayData[3 * i + 0] = rgbData[3 * i + 0];
+            overlayData[3 * i + 1] = rgbData[3 * i + 1];
+            overlayData[3 * i + 2] = rgbData[3 * i + 2];
         } else {
-            overlayData[3 * i + 1] = (rgbData[3 * i + 0] + rgbData[3 * i + 1] + rgbData[3 * i + 2]) / 3;
-            overlayData[3 * i + 2] = 255 - grayData[i];
+            overlayData[3 * i + 0] = rgbData[3 * i + 0] * 0.4;
+            overlayData[3 * i + 1] = rgbData[3 * i + 1] * 0.4 + histogram[grayData[i]] * 0.6;
+            overlayData[3 * i + 2] = rgbData[3 * i + 2] * 0.4 + histogram[grayData[i]] * 0.6;
         }
     }
 }
