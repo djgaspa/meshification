@@ -59,6 +59,7 @@ class QtAcquisition : public QObject
     std::vector<unsigned> tri;
     int width = 640, height = 480;
     float focal_x, focal_y, center_x, center_y;
+    std::vector<float> k, t, r;
     int frame_id = 0;
     int timer_id;
 

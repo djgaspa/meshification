@@ -36,6 +36,9 @@ void Viewer::load(QtModelDescriptor data)
     glProgramUniform1f(prog, uniform_camera_focal_y, data.focal_y);
     glProgramUniform1f(prog, uniform_camera_centre_x, data.center_x);
     glProgramUniform1f(prog, uniform_camera_centre_y, data.center_y);
+    glProgramUniform1fv(prog, uniform_K, 5, data.k.data());
+    glProgramUniform3fv(prog, uniform_T, 1, data.t.data());
+    glProgramUniformMatrix3fv(prog, uniform_R, 1, GL_FALSE, data.r.data());
     n_elements = data.tri.size();
     updateGL();
 }
@@ -116,6 +119,9 @@ void Viewer::init()
     uniform_camera_focal_y = glGetUniformLocation(prog, "camera_focal_y");
     uniform_camera_centre_x = glGetUniformLocation(prog, "camera_centre_x");
     uniform_camera_centre_y = glGetUniformLocation(prog, "camera_centre_y");
+    uniform_K = glGetUniformLocation(prog, "K");
+    uniform_T = glGetUniformLocation(prog, "T");
+    uniform_R = glGetUniformLocation(prog, "R");
     uniform_mvp_matrix = glGetUniformLocation(prog, "mvp_matrix");
     const auto uniform_texture = glGetUniformLocation(prog, "camera_texture");
     glProgramUniform1i(prog, uniform_texture, 0);

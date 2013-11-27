@@ -37,21 +37,34 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
     consumer_worker(new AsyncWorker),
     width(camera->width()), height(camera->height()),
     center_x(width / 2), center_y(height / 2),
-    focal_x(540), focal_y(540)
+    focal_x(540), focal_y(540),
+    k(5), t(3), r(9)
 {
     qRegisterMetaType<RgbBuffer>("RgbBuffer");
     cv::FileStorage fs(calib_file, cv::FileStorage::READ);
-    if (fs.isOpened()) {
-        fs["image_width"] >> width;
-        fs["image_height"] >> height;
-        cv::Mat camera_matrix;
-        fs["camera_matrix"] >> camera_matrix;
-        focal_x = camera_matrix.at<double>(0, 0);
-        focal_y = camera_matrix.at<double>(1, 1);
-        center_x = camera_matrix.at<double>(0, 2);
-        center_y = camera_matrix.at<double>(1, 2);
-    } else
-        std::cerr << "WARNING: Unable to open camera calibration file " << calib_file << ". Using default (inexact) camera matrix." << std::endl;
+    if (fs.isOpened() == false) {
+        std::ostringstream error;
+        error << "Unable to open camera calibration file " << calib_file << '.' << std::endl;
+        throw std::logic_error(error.str());
+    }
+    fs["image_width"] >> width;
+    fs["image_height"] >> height;
+    cv::Mat camera_matrix;
+    fs["camera_matrix"] >> camera_matrix;
+    focal_x = camera_matrix.at<double>(0, 0);
+    focal_y = camera_matrix.at<double>(1, 1);
+    center_x = camera_matrix.at<double>(0, 2);
+    center_y = camera_matrix.at<double>(1, 2);
+    cv::Mat mat_k, mat_t, mat_r;
+    fs["distortion_coefficients"] >> mat_k;
+    fs["T"] >> mat_t;
+    fs["R"] >> mat_r; // row major, no need to transpose it if used as column major (OpenGL)
+    for (int i = 0; i < 3; ++i)
+        t[i] = -mat_t.at<double>(i);
+    for (int i = 0; i < 9;++i)
+        r[i] = mat_r.at<double>(i);
+    for (int i = 0; i < 5; ++i)
+        k[i] = mat_k.at<double>(i);
     std::cout << "RGB Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
 }
 
@@ -81,7 +94,8 @@ void QtAcquisition::process_frame()
     }
     QtModelDescriptor desc {
         width, height, center_x, center_y, focal_x, focal_y,
-        QVector<float>::fromStdVector(ver), QVector<unsigned>::fromStdVector(tri), QVector<char>::fromStdVector(buffer_rgb)
+                QVector<float>::fromStdVector(k), QVector<float>::fromStdVector(t), QVector<float>::fromStdVector(r),
+                QVector<float>::fromStdVector(ver), QVector<unsigned>::fromStdVector(tri), QVector<char>::fromStdVector(buffer_rgb)
     };
     emit update(desc);
     emit draw(std::move(buffer_rgb), width, height);

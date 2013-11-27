@@ -20,47 +20,72 @@
 #include <vector>
 #include <unordered_set>
 #include <opencv2/opencv.hpp>
-#include <pcl/range_image/range_image_planar.h>
+#include <Eigen/Core>
 #define REAL double
 #define VOID void
 #define ANSI_DECLARATORS
 #include "triangle.h"
 #include "Triangulator.hpp"
 
-double min_area = 0.0;
-double depth_coefficient = 0.0;
-pcl::RangeImagePlanar::Ptr cloud;
+using Cloud = std::vector<cv::Point3f>;
 
-template <typename T>
-inline bool isNan(const T& v)
+inline
+bool isValid(const Cloud& c, const cv::Size& size, int x, int y)
 {
-    return v != v;
+    return x >= 0 && x < size.width && y >= 0 && y < size.height && c[size.width * y + x].z != 0;
+}
+
+inline
+cv::Point3f getPoint(const Cloud& c, const cv::Size& size, int x, int y)
+{
+    return c[size.width * y + x];
+}
+
+inline
+Eigen::Vector3f getEigenVector(const Cloud& c, const cv::Size& size,  int x, int y)
+{
+    const auto& p = c[size.width * y + x];
+    return Eigen::Vector3f(p.x, p.y, p.z);
+}
+
+inline
+void getImagePoint(const Eigen::Vector3f& p, const cv::Mat& camera_matrix, int& x, int& y)
+{
+    x = camera_matrix.at<double>(0) * p[0] / p[2] + camera_matrix.at<double>(2);
+    y = camera_matrix.at<double>(4) * p[1] / p[2] + camera_matrix.at<double>(5);
 }
 
 int triunsuitable(REAL* triorg, REAL* tridest, REAL* triapex, REAL area)
 {
+    return Triangulator::triunsuitable(triorg, tridest, triapex, area);
+}
+
+Triangulator* Triangulator::current = nullptr;
+
+int Triangulator::triunsuitable_impl(REAL* triorg, REAL* tridest, REAL* triapex, REAL area)
+{
     if (area < min_area)
         return 0;
-    if (cloud.get() == 0)
+    if (cloud.empty())
         return 0;
     const float x0 = static_cast<float>(triorg[0]), y0 = static_cast<float>(triorg[1]);
     const float x1 = static_cast<float>(tridest[0]), y1 = static_cast<float>(tridest[1]);
     const float x2 = static_cast<float>(triapex[0]), y2 = static_cast<float>(triapex[1]);
     const float xm = (x0 + x1 + x2) / 3.0f;
     const float ym = (y0 + y1 + y2) / 3.0f;
-    if (cloud->isValid(xm, ym) == false && cloud->isValid(x0, y0) == false && cloud->isValid(x1, y1) == false && cloud->isValid(x2, y2) == false)
+    if (::isValid(cloud, size, xm, ym) == false && ::isValid(cloud, size, x0, y0) == false && ::isValid(cloud, size, x1, y1) == false && ::isValid(cloud, size, x2, y2) == false)
         return 0;
-    if (cloud->isValid(xm, ym) == false || cloud->isValid(x0, y0) == false || cloud->isValid(x1, y1) == false || cloud->isValid(x2, y2) == false)
+    if (::isValid(cloud, size, xm, ym) == false || ::isValid(cloud, size, x0, y0) == false || ::isValid(cloud, size, x1, y1) == false || ::isValid(cloud, size, x2, y2) == false)
         return area > 50;
-    const auto p03 = cloud->getEigenVector3f(x0, y0);
-    const auto p13 = cloud->getEigenVector3f(x1, y1);
-    const auto p23 = cloud->getEigenVector3f(x2, y2);
+    const auto p03 = ::getEigenVector(cloud, size, x0, y0);
+    const auto p13 = ::getEigenVector(cloud, size, x1, y1);
+    const auto p23 = ::getEigenVector(cloud, size, x2, y2);
     const auto pm3 = (p03 + p13 + p23) / 3.0f;
     int pmx, pmy;
-    cloud->getImagePoint(pm3[0], pm3[1], pm3[2], pmx, pmy);
-    if (cloud->isValid(pmx, pmy) == false)
+    ::getImagePoint(pm3, camera_matrix, pmx, pmy);
+    if (::isValid(cloud, size, pmx, pmy) == false)
         return 1;
-    const auto actual_pm = cloud->getEigenVector3f(pmx, pmy);
+    const auto actual_pm = ::getEigenVector(cloud, size, pmx, pmy);
     const auto n = (p13 - p03).cross(p23 - p03);
     const float d = -p03.dot(n);
     const float n_norm = n.norm();
@@ -140,13 +165,13 @@ struct Triangulator::Impl
     std::vector<int> segments;
     triangulateio in, out;
     std::vector<unsigned> triangles;
-    pcl::RangeImagePlanar::Ptr cloud;
-    Impl(pcl::RangeImagePlanar::Ptr cloud);
+    const std::vector<cv::Point3f>& cloud;
+    Impl(const std::vector<cv::Point3f>& cloud, const cv::Size& size);
     ~Impl();
 };
 
-Triangulator::Impl::Impl(pcl::RangeImagePlanar::Ptr cloud):
-    indices(cv::Size(cloud->width, cloud->height), CV_32SC1),
+Triangulator::Impl::Impl(const std::vector<cv::Point3f>& cloud, const cv::Size& size):
+    indices(size, CV_32SC1),
     cloud(cloud)
 {
     indices.setTo(-1);
@@ -177,14 +202,14 @@ Triangulator::Impl::~Impl()
     trifree(out.segmentmarkerlist);
 }
 
-Triangulator::Triangulator(pcl::RangeImagePlanar::Ptr cloud, double min_area, double depth_coefficient) :
-    p_(new Impl(cloud)),
-    min_area_(min_area),
-    depth_coefficient_(depth_coefficient)
+Triangulator::Triangulator(const std::vector<cv::Point3f>& cloud, const cv::Size& size, const cv::Mat& camera_matrix, double min_area, double depth_coefficient) :
+    p_(new Impl(cloud, size)),
+    size(size),
+    cloud(cloud),
+    camera_matrix(camera_matrix),
+    min_area(min_area),
+    depth_coefficient(depth_coefficient)
 {
-    ::min_area = min_area_;
-    ::depth_coefficient = depth_coefficient_;
-    cv::Size size = cv::Size(cloud->width, cloud->height);
     std::vector<cv::Point> frame {
         cv::Point(0, 0),
                 cv::Point(size.width - 1, 0),
@@ -192,7 +217,6 @@ Triangulator::Triangulator(pcl::RangeImagePlanar::Ptr cloud, double min_area, do
                 cv::Point(0, size.height - 1)
     };
     add_contour(frame);
-    ::cloud = cloud;
 }
 
 Triangulator::~Triangulator()
@@ -244,6 +268,7 @@ try {
     std::ostringstream flags_stream;
     flags_stream << "QXzu";
     const std::string flags = flags_stream.str();
+    current = this;
     triangulate(const_cast<char*>(flags.c_str()), &p_->in, &p_->out, 0);
 } catch (int) {
     p_->out.numberoftriangles = 0;
@@ -267,13 +292,13 @@ void Triangulator::draw(cv::Mat& output) const
             p[j] = cv::Point(ptr[0], ptr[1]);
         }
         cv::Scalar color(0, 200, 0);
-        if (cloud->isValid(p[0].x, p[0].y) && cloud->isValid(p[1].x, p[1].y) && cloud->isValid(p[2].x, p[2].y)) {
+        if (::isValid(cloud, size, p[0].x, p[0].y) && ::isValid(cloud, size, p[1].x, p[1].y) && ::isValid(cloud, size, p[2].x, p[2].y)) {
             color = cv::Scalar(0, 0, 200);
             const auto pm = ::median_point(p);
-            if (cloud->isValid(pm.x, pm.y))
+            if (::isValid(cloud, size, pm.x, pm.y))
                 cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
         }
-        if (cloud->isValid(p[0].x, p[0].y) == false && cloud->isValid(p[1].x, p[1].y) == false && cloud->isValid(p[2].x, p[2].y) == false)
+        if (::isValid(cloud, size, p[0].x, p[0].y) == false && ::isValid(cloud, size, p[1].x, p[1].y) == false && ::isValid(cloud, size, p[2].x, p[2].y) == false)
             color = cv::Scalar(200, 0, 0);
         cv::line(output, p[0], p[1], color);
         cv::line(output, p[1], p[2], color);
@@ -296,9 +321,9 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
                 !std::isfinite(p[1].x) || !std::isfinite(p[1].y) ||
                 !std::isfinite(p[2].x) || !std::isfinite(p[2].y))
             continue;
-        if (cloud->isValid(p[0].x, p[0].y) == false &&
-                cloud->isValid(p[1].x, p[1].y) == false &&
-                cloud->isValid(p[2].x, p[2].y) == false)
+        if (::isValid(cloud, size, p[0].x, p[0].y) == false &&
+                ::isValid(cloud, size, p[1].x, p[1].y) == false &&
+                ::isValid(cloud, size, p[2].x, p[2].y) == false)
             continue;
         cv::Vec6f t;
         for (int j = 0; j < 3; ++j) {
@@ -309,4 +334,11 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
         triangles.push_back(t);
     }
     return triangles;
+}
+
+int Triangulator::triunsuitable(double* triorg, double* tridest, double* triapex, double area)
+{
+    if (current == nullptr)
+        return 0;
+    return current->triunsuitable_impl(triorg, tridest, triapex, area);
 }

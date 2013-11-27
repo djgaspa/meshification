@@ -22,17 +22,17 @@
 #include <vector>
 #include <string>
 #include <opencv/cv.hpp>
-#include <pcl/range_image/range_image_planar.h>
 
 class MeshBuilder
 {
+    const cv::Size size;
     cv::Mat indices_;
     std::vector<float> ver_;
     std::vector<unsigned> tri_;
-    pcl::RangeImagePlanar::Ptr cloud;
+    const std::vector<cv::Point3f>& cloud;
 
 public:
-    MeshBuilder(pcl::RangeImagePlanar::Ptr cloud);
+    MeshBuilder(const std::vector<cv::Point3f>& cloud, const cv::Size& size);
     ~MeshBuilder();
     void insert(const std::vector<cv::Point>& p);
     void write(std::ostream& out) const;

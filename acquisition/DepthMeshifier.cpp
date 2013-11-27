@@ -17,6 +17,7 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdexcept>
 #include <opencv/cv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <pcl/range_image/range_image_planar.h>
@@ -261,6 +262,66 @@ __ocv_canny_push:
     }
 }
 
+class CameraModel
+{
+    cv::Size size_;
+    cv::Mat camera_matrix, distortion_coefficients;
+    std::vector<cv::Point2f> imgCoordsUndist;
+
+public:
+    explicit CameraModel(const std::string& calibration);
+    void reconstruct(cv::Mat& depthMat, std::vector<cv::Point3f>& points);
+    int width() const { return size_.width; }
+    int height() const { return size_.height; }
+    cv::Size size() const { return size_; }
+    const cv::Mat& getCameraMatrix() const { return camera_matrix; }
+};
+
+CameraModel::CameraModel(const std::string& calibration)
+{
+    cv::FileStorage fs(calibration, cv::FileStorage::READ);
+    if (fs.isOpened() == false)
+        throw std::logic_error("Unable to open camera calibration file " + calibration);
+    fs["image_width"] >> size_.width;
+    fs["image_height"] >> size_.height;
+    fs["irCameraMatrix"] >> camera_matrix;
+    fs["irDistCoeffs"] >> distortion_coefficients;
+    fs.release();
+    std::cout << "IR Cam Description\nWidth: " << size_.width << "\nHeight: " << size_.height << "\nCamera Matrix:\n" << camera_matrix << "\nDistortion Coefficients:\n" << distortion_coefficients << "\n---------\n" << std::endl;
+    const int n = size_.area();
+    imgCoordsUndist.resize(n);
+    std::vector<cv::Point2f> imgCoordsDist(n);
+    for (int u = 0; u < size_.width; ++u) {
+        for (int v = 0; v < size_.height; ++v) {
+            int i = u + v * size_.width;
+            imgCoordsDist[i] = cv::Point2f(u, v);
+        }
+    }
+    cv::undistortPoints(cv::Mat(imgCoordsDist), imgCoordsUndist, camera_matrix, distortion_coefficients);
+}
+
+void CameraModel::reconstruct(cv::Mat& depthMat, std::vector<cv::Point3f>& points)
+{
+    if (depthMat.size() != size())
+        throw std::logic_error("Depth image has a wrong size");
+    const int n = size().area();
+    points.resize(n);
+
+    unsigned short* depth = (unsigned short*) depthMat.data;
+
+    // reconstruct 3d coordinates
+    for (int u = 0; u < width(); ++u) {
+        for (int v = 0; v < height(); ++v) {
+            const int i = u + v * width();
+            const float xh = imgCoordsUndist[i].x;
+            const float yh = imgCoordsUndist[i].y;
+
+            const float Z = depth[i] / 1000.0f; // TODO pythagoras
+
+            points[i] = cv::Point3f(xh * Z, yh * Z, Z);
+        }
+    }
+}
 
 static void color_edges_callback(int value, void* arg)
 {
@@ -268,15 +329,7 @@ static void color_edges_callback(int value, void* arg)
     use_color_edges = value == 1 ? true : false;
 }
 
-struct DepthMeshifier::Impl
-{
-    cv::Mat camera_matrix, dist_coeffs;
-};
-
 DepthMeshifier::DepthMeshifier(const std::string& calibration) :
-    width(640), height(480),
-    focal_x(540), focal_y(540),
-    center_x(width / 2.0), center_y(height / 2.0),
     near_plane(500), far_plane(4000),
     min_threshold(40), max_threshold(80),
     approx_polygon(2000), min_area(100),
@@ -284,48 +337,35 @@ DepthMeshifier::DepthMeshifier(const std::string& calibration) :
     min_contour_area(100), depth_threshold(20),
     m_is_draw_2d_enabled(false),
     use_color_edges(true),
-    filter(new DepthFilter(width, height)),
+    camera(new CameraModel(calibration)),
+    filter(new DepthFilter(camera->width(), camera->height())),
     canny_worker(new AsyncWorker),
-    cloud_worker(new AsyncWorker),
-    p(new Impl)
-{
-    cv::FileStorage fs(calibration, cv::FileStorage::READ);
-    if (fs.isOpened()) {
-        fs["image_width"] >> width;
-        fs["image_height"] >> height;
-        fs["irCameraMatrix"] >> p->camera_matrix;
-        focal_x = p->camera_matrix.at<double>(0, 0);
-        focal_y = p->camera_matrix.at<double>(1, 1);
-        center_x = p->camera_matrix.at<double>(0, 2);
-        center_y = p->camera_matrix.at<double>(1, 2);
-        std::cout << p->camera_matrix << std::endl;
-        std::cout << "IR Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
-        fs["distortion_coefficients"] >> p->dist_coeffs;
-    } else
-        std::cerr << "WARNING: Unable to open camera calibration file " << calibration << ". Using default (inexact) camera matrix." << std::endl;
-}
+    cloud_worker(new AsyncWorker)
+{ }
 
 DepthMeshifier::~DepthMeshifier()
 { }
 
 void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vector<unsigned>& tri, std::vector<float>& ver)
 {
+    const cv::Size size = camera->size();
+    const int n = size.area();
     tri.clear();
     ver.clear();
     //cv::Mat internal_edges(height, width, CV_8UC1);
     //(*filter)(buffer_rgb, (unsigned short*)buffer_depth, internal_edges);
     //cv::imshow("Internal Edges", internal_edges);
-    cv::Mat depth(height, width, CV_16UC1, buffer_depth), depth8(height, width, CV_8UC1);
+    cv::Mat depth(size, CV_16UC1, buffer_depth), depth8(size, CV_8UC1);
     if (is_background_subtraction_enabled == true) {
         if (background.empty() == true) {
-            background.resize(width * height);
+            background.resize(n);
             std::copy(depth.begin<unsigned short>(), depth.end<unsigned short>(), background.begin());
         }
     }
     else
         background.clear();
     unsigned short depth_min = std::numeric_limits<unsigned short>::max(), depth_max = 0;
-    for (int i = 0; i < width * height; ++i) {
+    for (int i = 0; i < n; ++i) {
         unsigned short& d = depth.at<unsigned short>(i);
         d = (d < near_plane || d > far_plane || (background.empty() == false && std::abs(d - background[i]) < 100)) ? 0 : d;
         if (d == 0)
@@ -333,18 +373,18 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         depth_min = std::min(d, depth_min);
         depth_max = std::max(d, depth_max);
     }
-    pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
-    cloud_worker->begin([cloud, &depth, this] {
-        cloud->setDepthImage(depth.ptr<unsigned short>(), width, height, center_x, center_y, focal_x, focal_y);
+    std::vector<cv::Point3f> cloud;
+    cloud_worker->begin([&cloud, &depth, this] {
+        camera->reconstruct(depth, cloud);
     });
     const double alpha = 250.0 / (depth_max - depth_min);
     const double beta = -depth_min * alpha + 5;
-    for (int i = 0; i < width * height; ++i) {
+    for (int i = 0; i < n; ++i) {
         const unsigned short& s = depth.at<unsigned short>(i);
         unsigned char& c = depth8.at<unsigned char>(i);
         c = s == 0 ? 0 : (s * alpha + beta);
     }
-    cv::Mat img_color(height, width, CV_8UC3, buffer_rgb), img_gray;
+    cv::Mat img_color(size, CV_8UC3, buffer_rgb), img_gray;
     const bool canny_color = use_color_edges;
     if (canny_color == true)
         canny_worker->begin([&img_color, &img_gray, this] {
@@ -352,7 +392,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
             cv::blur(img_gray, img_gray, cv::Size(3, 3));
             cv::Canny(img_gray, img_gray, min_threshold, max_threshold, 3, true);
         });
-    cv::Mat mask(height, width, CV_8UC1);
+    cv::Mat mask(size, CV_8UC1);
     cv::threshold(depth8, mask, 0, 255, CV_THRESH_BINARY);
     cv::blur(depth8, depth8, cv::Size(3, 3));
     cv::Canny(depth8, depth8, min_threshold, max_threshold, 3, true);
@@ -370,7 +410,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(depth8, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     cloud_worker->end();
-    Triangulator triangulate(cloud, min_area, depth_threshold);
+    Triangulator triangulate(cloud, size, camera->getCameraMatrix(), min_area, depth_threshold);
     for (unsigned i = 0; i < contours.size(); ++i) {
         std::vector<cv::Point>& c = contours[i];
         cv::approxPolyDP(c, c, approx_polygon / 1000.0, true);
@@ -390,7 +430,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     if (triangles.empty())
         return;
     SurfaceReconstruction recon;
-    recon(triangles, depth, cloud);
+    recon(triangles, cloud, size);
     const MeshBuilder& m = recon.mesh();
     tri = m.get_triangles();
     ver = m.get_vertices();

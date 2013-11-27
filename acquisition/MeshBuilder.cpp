@@ -18,15 +18,23 @@
 */
 
 #include <fstream>
+#include <sstream>
+#include <stdexcept>
 #include "MeshBuilder.hpp"
 
-MeshBuilder::MeshBuilder(pcl::RangeImagePlanar::Ptr cloud) :
-    indices_(cv::Size(cloud->width, cloud->height), CV_16SC1),
+MeshBuilder::MeshBuilder(const std::vector<cv::Point3f>& cloud, const cv::Size& size) :
+    size(size),
+    indices_(size, CV_16SC1),
     cloud(cloud)
 {
     indices_.setTo(-1);
     ver_.reserve(10000);
     tri_.reserve(10000);
+    if (cloud.size() < size.width * size.height) {
+        std::ostringstream error;
+        error << "Cloud contains " << cloud.size() << " points, but the range image size is " << size.width << 'x' << size.height << '.';
+        throw std::logic_error(error.str());
+    }
 }
 
 MeshBuilder::~MeshBuilder()
@@ -40,10 +48,10 @@ void MeshBuilder::insert(const std::vector<cv::Point>& p)
     for (int i = 0; i < 3; ++i) {
         idx[i] = indices_.at<short>(p[i]);
         if (idx[i] == -1) {
-            const auto p3d = cloud->at(p[i].x, p[i].y);
+            const auto p3d = cloud[p[i].x + size.width * p[i].y];
             ver_.push_back(p3d.x);
-            ver_.push_back(-p3d.y);
-            ver_.push_back(-p3d.z);
+            ver_.push_back(p3d.y);
+            ver_.push_back(p3d.z);
             idx[i] = ver_.size() / 3 - 1;
             indices_.at<short>(p[i]) = idx[i];
         }

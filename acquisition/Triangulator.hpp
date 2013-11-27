@@ -18,21 +18,29 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <vector>
 #include <opencv2/opencv.hpp>
-#include <pcl/range_image/range_image_planar.h>
 
 class Triangulator
 {
     struct Impl;
     Impl* p_;
-    const double min_area_, depth_coefficient_;
+    const std::vector<cv::Point3f>& cloud;
+    const cv::Size size;
+    const cv::Mat camera_matrix;
+    const double min_area, depth_coefficient;
+
+    static Triangulator* current;
+    int triunsuitable_impl(double* triorg, double* tridest, double* triapex, double area);
 
 public:
-    Triangulator(pcl::RangeImagePlanar::Ptr cloud, double min_area = 10.0, double depth_coefficient = 5.0);
+    Triangulator(const std::vector<cv::Point3f>& cloud, const cv::Size& size, const cv::Mat& camera_matrix, double min_area = 10.0, double depth_coefficient = 5.0);
     ~Triangulator();
     void add_contour(const std::vector<cv::Point>& contour);
     void add_hole(const cv::Point2d&);
     void operator()();
     void draw(cv::Mat& output) const;
     std::vector<cv::Vec6f> get_triangles() const;
+
+    static int triunsuitable(double* triorg, double* tridest, double* triapex, double area);
 };

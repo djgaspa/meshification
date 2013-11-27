@@ -21,42 +21,47 @@
 #include "SurfaceReconstruction.hpp"
 #include "MeshBuilder.hpp"
 
-static bool is_inner(const cv::Point& p, const cv::Mat& depth)
+static inline
+bool is_inner(const cv::Point& p, const SurfaceReconstruction::Cloud& cloud, const cv::Size& size)
 {
-    return depth.at<unsigned short>(p) != 0;
+    return cloud[p.x + p.y * size.width].z != 0.0;
 }
 
-static bool is_joinable(const cv::Point& p1, const cv::Point& p2, const cv::Mat& depth)
+static inline
+bool is_joinable(const cv::Point& p1, const cv::Point& p2, const SurfaceReconstruction::Cloud& cloud, const cv::Size& size)
 {
-    if (::is_inner(p1, depth) == false || ::is_inner(p2, depth) == false)
+    if (::is_inner(p1, cloud, size) == false || ::is_inner(p2, cloud, size) == false)
         return false;
     //return true;
-    const unsigned short depth_diff = std::abs(depth.at<ushort>(p1) - depth.at<ushort>(p2));
-    return depth_diff < 150;
+    const auto depth_diff = std::fabs(cloud[p1.x + p1.y * size.width].z - cloud[p2.x + p2.y * size.width].z);
+    return depth_diff < 0.150;
 }
 
-static cv::Point intersect(const cv::Point& p1, const cv::Point& p2, const cv::Mat& depth)
+static inline
+cv::Point intersect(const cv::Point& p1, const cv::Point& p2, const SurfaceReconstruction::Cloud& cloud, const cv::Size& size)
 {
     if (std::abs(p1.x - p2.x) <= 1 && std::abs(p1.y - p2.y) <= 1)
-        return ::is_joinable(p1, p2, depth) == true ? p2 : p1;
+        return ::is_joinable(p1, p2, cloud, size) == true ? p2 : p1;
     const cv::Point mid = (p1 + p2) * 0.5;
-    return ::is_joinable(p1, mid, depth) == true ? ::intersect(mid, p2, depth) : ::intersect(p1, mid, depth);
+    return ::is_joinable(p1, mid, cloud, size) == true ? ::intersect(mid, p2, cloud, size) : ::intersect(p1, mid, cloud, size);
 }
 
-static void extend_point(std::vector<cv::Point>& tri, const cv::Mat& depth)
+static inline
+void extend_point(std::vector<cv::Point>& tri, const SurfaceReconstruction::Cloud& cloud, const cv::Size& size)
 {
     for (int j = 0; j < 2; ++j)
-        tri[1 + j] = intersect(tri[0], tri[1 + j], depth);
+        tri[1 + j] = intersect(tri[0], tri[1 + j], cloud, size);
 }
 
-static void extend_edge(std::vector<cv::Point>& tri, std::vector<cv::Point>& new_tri, const cv::Mat& depth)
+static inline
+void extend_edge(std::vector<cv::Point>& tri, std::vector<cv::Point>& new_tri, const SurfaceReconstruction::Cloud& cloud, const cv::Size& size)
 {
     new_tri.resize(3);
     for (int j = 0; j < 2; ++j)
-        new_tri[1 - j] = intersect(tri[j], tri[2], depth);
+        new_tri[1 - j] = intersect(tri[j], tri[2], cloud, size);
     double diagonal[2];
-    diagonal[0] = cv::norm(depth.at<unsigned short>(tri[0]) - depth.at<unsigned short>(new_tri[0]));
-    diagonal[1] = cv::norm(depth.at<unsigned short>(tri[1]) - depth.at<unsigned short>(new_tri[1]));
+    diagonal[0] = cv::norm(cloud[tri[0].x + tri[0].y * size.width] - cloud[new_tri[0].x + new_tri[0].y * size.width]);
+    diagonal[1] = cv::norm(cloud[tri[1].x + tri[1].y * size.width] - cloud[new_tri[1].x + new_tri[1].y * size.width]);
     const int d = diagonal[0] < diagonal[1] ? 0 : 1;
     tri[2] = new_tri[d];
     new_tri[2] = tri[d];
@@ -75,10 +80,10 @@ SurfaceReconstruction::SurfaceReconstruction()
 SurfaceReconstruction::~SurfaceReconstruction()
 {}
 
-void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth, pcl::RangeImagePlanar::Ptr cloud)
+void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, const Cloud& cloud, const cv::Size& size)
 {
-    mesh_builder_.reset(new MeshBuilder(cloud));
-    mesh2d = cv::Mat(depth.size(), CV_8UC1);
+    mesh_builder_.reset(new MeshBuilder(cloud, size));
+    mesh2d = cv::Mat(size, CV_8UC1);
     mesh2d.setTo(0);
     for (const auto& t : triangles) {
         std::vector<cv::Point> pt(3);
@@ -87,7 +92,7 @@ void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, 
         int n_inner = 0;
         std::vector<bool> inner(3);
         for (int j = 0; j < 3; ++j)
-            if (::is_inner(pt[j], depth) == true) {
+            if (::is_inner(pt[j], cloud, size) == true) {
                 ++n_inner;
                 inner[j] = true;
             }
@@ -101,7 +106,7 @@ void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, 
                 std::swap(pt[0], pt[2]);
                 std::swap(pt[1], pt[2]);
             }
-            extend_point(pt, depth);
+            extend_point(pt, cloud, size);
             mesh_builder_->insert(pt);
             //draw_triangle(pt, mesh2d);
         } else if (n_inner == 2) {
@@ -113,21 +118,21 @@ void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, 
                 std::swap(pt[0], pt[1]);
             }
             std::vector<cv::Point> pt2(3);
-            if (::is_joinable(pt[0], pt[1], depth)) {
-                extend_edge(pt, pt2, depth);
+            if (::is_joinable(pt[0], pt[1], cloud, size)) {
+                extend_edge(pt, pt2, cloud, size);
             } else {
                 std::rotate_copy(pt.begin(), pt.begin() + 1, pt.end(), pt2.begin());
-                extend_point(pt, depth);
-                extend_point(pt2, depth);
+                extend_point(pt, cloud, size);
+                extend_point(pt2, cloud, size);
             }
             mesh_builder_->insert(pt);
             //draw_triangle(pt, mesh2d);
             mesh_builder_->insert(pt2);
             //draw_triangle(pt2, mesh2d);
         } else {
-            const bool ab = ::is_joinable(pt[0], pt[1], depth);
-            const bool bc = ::is_joinable(pt[1], pt[2], depth);
-            const bool ac = ::is_joinable(pt[0], pt[2], depth);
+            const bool ab = ::is_joinable(pt[0], pt[1], cloud, size);
+            const bool bc = ::is_joinable(pt[1], pt[2], cloud, size);
+            const bool ac = ::is_joinable(pt[0], pt[2], cloud, size);
             if ((ab && bc) || (ab && ac) || (bc && ac)) {
                 mesh_builder_->insert(pt);
                 //draw_triangle(pt, mesh2d);
@@ -136,23 +141,23 @@ void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, 
             std::vector<cv::Point> pt2(3), pt3(3);
             if (ab) {
                 std::rotate_copy(pt.begin(), pt.begin() + 2, pt.end(), pt2.begin());
-                extend_point(pt2, depth);
-                extend_edge(pt, pt3, depth);
+                extend_point(pt2, cloud, size);
+                extend_edge(pt, pt3, cloud, size);
             } else if (bc) {
                 std::rotate_copy(pt.begin(), pt.begin() + 1, pt.end(), pt2.begin());
-                extend_point(pt, depth);
-                extend_edge(pt2, pt3, depth);
+                extend_point(pt, cloud, size);
+                extend_edge(pt2, pt3, cloud, size);
             } else if (ac) {
                 std::rotate_copy(pt.begin(), pt.begin() + 1, pt.end(), pt2.begin());
-                extend_point(pt2, depth);
+                extend_point(pt2, cloud, size);
                 std::rotate(pt.begin(), pt.begin() + 2, pt.end());
-                extend_edge(pt, pt3, depth);
+                extend_edge(pt, pt3, cloud, size);
             } else {
                 std::rotate_copy(pt.begin(), pt.begin() + 1, pt.end(), pt2.begin());
-                extend_point(pt2, depth);
+                extend_point(pt2, cloud, size);
                 std::rotate_copy(pt.begin(), pt.begin() + 2, pt.end(), pt3.begin());
-                extend_point(pt3, depth);
-                extend_point(pt, depth);
+                extend_point(pt3, cloud, size);
+                extend_point(pt, cloud, size);
             }
             mesh_builder_->insert(pt);
             //draw_triangle(pt, mesh2d);

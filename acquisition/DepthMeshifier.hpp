@@ -24,21 +24,17 @@
 
 class DepthFilter;
 class AsyncWorker;
+class CameraModel;
 
 class DepthMeshifier
 {
-    int width, height;
-    double focal_x, focal_y, center_x, center_y;
-
     bool m_is_draw_2d_enabled;
     bool use_color_edges;
 
-    std::auto_ptr<DepthFilter> filter;
+    std::unique_ptr<CameraModel> camera;
+    std::unique_ptr<DepthFilter> filter;
     std::unique_ptr<AsyncWorker> canny_worker, cloud_worker;
     std::vector<unsigned short> background;
-
-    struct Impl;
-    std::unique_ptr<Impl> p;
 
 public:
     int near_plane, far_plane;
