@@ -26,12 +26,17 @@ try {
     vs.Source(
                 "#version 430 core\n"
                 "layout(location = 0) in vec3 vertex;\n"
+
                 "layout(location = 0) uniform float camera_focal_x;\n"
                 "layout(location = 1) uniform float camera_focal_y;\n"
                 "layout(location = 2) uniform float camera_centre_x;\n"
                 "layout(location = 3) uniform float camera_centre_y;\n"
-                "layout(location = 4) uniform mat4 mvp_matrix;\n"
-                "layout(location = 8) uniform sampler2DRect camera_y;\n"
+                "layout(location = 4) uniform float K[5];\n"
+                "layout(location = 9) uniform vec3 T;\n"
+                "layout(location = 10) uniform mat3 R;\n"
+                "layout(location = 13) uniform mat4 mvp_matrix;\n"
+                "layout(location = 17) uniform sampler2DRect camera_y;\n"
+
                 "out vec2 tex_coord;\n"
 
                 "void main()\n"
@@ -39,17 +44,36 @@ try {
                 "    vec4 v = vec4(vertex, 1.0f);\n"
                 "    ivec2 size = textureSize(camera_y);\n"
                 "    gl_Position = mvp_matrix * v;\n"
-                "    tex_coord.s = size[0] - (camera_focal_x * v.x / v.z + camera_centre_x);\n"
-                "    tex_coord.t = camera_focal_y * v.y / v.z + camera_centre_y;\n"
+                "    vec3 vt = R * vertex + T;\n"
+
+                "    float r2, r4, r6, a1, a2, a3, cdist;\n"
+
+                "    vt.x /= vt.z;\n"
+                "    vt.y /= vt.z;\n"
+
+                "    r2 = vt.x * vt.x + vt.y * vt.y;\n"
+                "    r4 = r2 * r2;\n"
+                "    r6 = r4 * r2;\n"
+                "    a1 = 2 * vt.x * vt.y;\n"
+                "    a2 = r2 + 2 * vt.x * vt.x;\n"
+                "    a3 = r2 + 2 * vt.y * vt.y;\n"
+                "    cdist = 1 + K[0] * r2 + K[1] * r4 + K[4] * r6;\n"
+                "    float xd = vt.x * cdist + K[2] * a1 + K[3] * a2;\n"
+                "    float yd = vt.y * cdist + K[2] * a3 + K[3] * a1;\n"
+
+                "    tex_coord.s = camera_focal_x * xd + camera_centre_x;\n"
+                "    tex_coord.t = camera_focal_y * yd + camera_centre_y;\n"
                 "}\n"
                 ).Compile();
     oglplus::FragmentShader fs;
     fs.Source(
                 "#version 430 core\n"
-                "layout(location = 8) uniform sampler2DRect camera_y;\n"
-                "layout(location = 9) uniform sampler2DRect camera_u;\n"
-                "layout(location = 10) uniform sampler2DRect camera_v;\n"
                 "in vec2 tex_coord;\n"
+
+                "layout(location = 17) uniform sampler2DRect camera_y;\n"
+                "layout(location = 18) uniform sampler2DRect camera_u;\n"
+                "layout(location = 19) uniform sampler2DRect camera_v;\n"
+
                 "layout(location = 0) out vec4 frag_color;\n"
 
                 "void main()\n"
@@ -65,9 +89,9 @@ try {
                 ).Compile();
     p.AttachShader(vs).AttachShader(fs).Link().DetachShader(fs).DetachShader(vs);
     p.Use();
-    glUniform1i(8, 0);
-    glUniform1i(9, 1);
-    glUniform1i(10, 2);
+    glUniform1i(17, 0);
+    glUniform1i(18, 1);
+    glUniform1i(19, 2);
     p.UseNone();
 } catch(const oglplus::ProgramBuildError& pbe) {
     std::cerr <<
@@ -153,12 +177,15 @@ void Model::draw() const
     glUniform1f(1, focal_y);
     glUniform1f(2, center_x);
     glUniform1f(3, center_y);
+    glUniform1fv(4, 5, k);
+    glUniform3fv(9, 1, t);
+    glUniformMatrix3fv(10, 1, GL_FALSE, r);
     float mv[16], pr[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, mv);
     glGetFloatv(GL_PROJECTION_MATRIX, pr);
     Eigen::Map<Eigen::Matrix4f> view_matrix(mv), proj_matrix(pr);
     const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
-    glUniformMatrix4fv(4, 1, GL_FALSE, mvp_matrix.data());
+    glUniformMatrix4fv(13, 1, GL_FALSE, mvp_matrix.data());
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     Program::instance().use(false);
     glPopMatrix();
@@ -216,6 +243,9 @@ void Model::load(const Data3d& data)
     focal_y = data.focal_y;
     center_x = data.center_x;
     center_y = data.center_y;
+    std::copy(data.t, data.t + 3, t);
+    std::copy(data.r, data.r + 9, r);
+    std::copy(data.k, data.k + 5, k);
 }
 
 void Model::save_view() const

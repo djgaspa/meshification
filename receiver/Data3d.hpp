@@ -10,6 +10,7 @@ struct Data3d
     const int width, height;
     float center_x, center_y, focal_x, focal_y;
     double modelview[16];
+    float t[3], r[9], k[5];
     std::string name;
 
     Data3d(int w, int h) :

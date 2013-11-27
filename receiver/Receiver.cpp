@@ -85,6 +85,9 @@ void Receiver::run()
                 bs.Read(data->focal_x);
                 bs.Read(data->focal_y);
                 bs.Read(data->modelview);
+                bs.Read(data->t);
+                bs.Read(data->r);
+                bs.Read(data->k);
                 int size;
                 bs.Read(size);
                 std::vector<char> buffer(size);

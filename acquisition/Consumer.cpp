@@ -56,6 +56,19 @@ Consumer::Consumer(const std::string& address, const std::string& name, const st
     if (calibration.is_open())
         for (int i = 0; i < 16; ++i)
             calibration >> modelview[i];
+    cv::FileStorage fs(calib, cv::FileStorage::READ);
+    if (fs.isOpened() == false)
+        throw std::logic_error("Unable to open calibration file "  + calib);
+    cv::Mat tvec, rot, K;
+    fs["T"] >> tvec;
+    fs["R"] >> rot;
+    fs["distortion_coefficients"] >> K;
+    for (int i = 0; i < 3; ++i)
+        t[i] = -tvec.at<double>(i);
+    for (int i = 0; i < 9; ++i)
+        r[i] = rot.at<double>(i);
+    for (int i = 0; i < 5; ++i)
+        k[i] = K.at<double>(i);
 }
 
 Consumer::~Consumer()
@@ -178,6 +191,9 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     network_stream.Write(cam_params->CameraMatrix.at<float>(0, 0));
     network_stream.Write(cam_params->CameraMatrix.at<float>(1, 1));
     network_stream.Write(modelview);
+    network_stream.Write(t);
+    network_stream.Write(r);
+    network_stream.Write(k);
     network_stream.Write(static_cast<int>(model_string.size()));
     network_stream.Write(model_string.data(), model_string.size());
     network_stream.Write(static_cast<int>(video_string.size()));

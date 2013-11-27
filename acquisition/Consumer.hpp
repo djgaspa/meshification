@@ -47,6 +47,7 @@ class Consumer
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
     double modelview[16];
+    float t[3], r[9], k[5];
 
     std::unique_ptr<AsyncWorker> async_video, async_marker;
     std::unique_ptr<VideoEncoder> encode;

@@ -8,7 +8,7 @@ class Model
     static const int n_vbo = 2, n_tex = 3;
     unsigned vao[1], vbo[n_vbo], tex[n_tex];
     size_t n_elements = 0;
-    float model_matrix[16], matrix[16];
+    float model_matrix[16], matrix[16], t[3], r[9], k[5];
     float focal_x, focal_y, center_x, center_y;
     std::string name;
 
