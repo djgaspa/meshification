@@ -39,24 +39,12 @@ static const std::string xml_config =
                 "</Dumps>"
             "</Log>"
             "<ProductionNodes>"
-                "<Node type=\"Image\" name=\"Image1\" stopOnError=\"false\">"
-                    "<Configuration>"
-                        "<MapOutputMode xRes=\"640\" yRes=\"480\" FPS=\"30\"/>"
-                        "<Mirror on=\"false\"/>"
-                    "</Configuration>"
-                "</Node> "
                 "<Node type=\"IR\" name=\"IR1\" stopOnError=\"false\">"
                     "<Configuration>"
                         "<MapOutputMode xRes=\"640\" yRes=\"480\" FPS=\"30\"/>"
                         "<Mirror on=\"false\"/>"
                     "</Configuration>"
                 "</Node> "
-                "<Node type=\"Depth\" name=\"Depth1\">"
-                    "<Configuration>"
-                        "<MapOutputMode xRes=\"640\" yRes=\"480\" FPS=\"30\"/>"
-                        "<Mirror on=\"false\"/>"
-                    "</Configuration>"
-                "</Node>"
             "</ProductionNodes>"
         "</OpenNI>\n";
 
@@ -151,8 +139,9 @@ Kinect::Kinect(const int id) :
     xn::NodeInfo deviceNode = *it;
     const auto bus_address = get_bus_address(deviceNode);
     p->serial_number = ::get_serial_number(bus_address.first, bus_address.second);
-    check(p->ctx.RunXmlScript(xml_config.c_str()));
     check(p->ctx.CreateProductionTree(deviceNode));
+    check(p->ctx.RunXmlScript(xml_config.c_str()));
+    check(p->ctx.StopGeneratingAll());
     check(p->image.Create(p->ctx));
     check(p->depth.Create(p->ctx));
     check(p->ir.Create(p->ctx));
