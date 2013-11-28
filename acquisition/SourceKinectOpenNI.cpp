@@ -39,17 +39,10 @@ static const std::string xml_config =
                 "</Dumps>"
             "</Log>"
             "<ProductionNodes>"
-                "<Node type=\"Image\" name=\"Image1\" stopOnError=\"false\">"
+                "<Node type=\"IR\" name=\"IR1\">"
                     "<Configuration>"
                         "<MapOutputMode xRes=\"640\" yRes=\"480\" FPS=\"30\"/>"
-                        "<Mirror on=\"false\"/>"
                     "</Configuration>"
-                "</Node> "
-                "<Node type=\"Depth\" name=\"Depth1\">"
-                        "<Configuration>"
-                                "<MapOutputMode xRes=\"640\" yRes=\"480\" FPS=\"30\"/>"
-                                "<Mirror on=\"false\"/>"
-                        "</Configuration>"
                 "</Node>"
             "</ProductionNodes>"
         "</OpenNI>\n";
@@ -57,9 +50,9 @@ static const std::string xml_config =
 struct SourceKinectOpenNI::Impl
 {
     xn::Context ctx;
-    xn::ProductionNode production_node;
     xn::ImageGenerator image;
     xn::DepthGenerator depth;
+    xn::IRGenerator ir;
 };
 
 static void check(const XnStatus ret)
@@ -143,12 +136,12 @@ SourceKinectOpenNI::SourceKinectOpenNI(const int id) :
     xn::NodeInfo deviceNode = *it;
     const auto bus_address = get_bus_address(deviceNode);
     serial_number = ::get_serial_number(bus_address.first, bus_address.second);
-    check(p->ctx.CreateProductionTree(deviceNode, p->production_node));
+    check(p->ctx.CreateProductionTree(deviceNode));
     check(p->ctx.RunXmlScript(xml_config.c_str()));
+    check(p->ctx.StopGeneratingAll());
     check(p->image.Create(p->ctx));
     check(p->depth.Create(p->ctx));
-    //check(p->depth.GetAlternativeViewPointCap().SetViewPoint(p->image));
-    check(p->ctx.StartGeneratingAll());
+    check(p->ir.Create(p->ctx));
 }
 
 SourceKinectOpenNI::~SourceKinectOpenNI()
@@ -156,17 +149,51 @@ SourceKinectOpenNI::~SourceKinectOpenNI()
     p->ctx.StopGeneratingAll();
     p->depth.Release();
     p->image.Release();
-    p->production_node.Release();
+    p->ir.Release();
     p->ctx.Release();
 }
 
-void SourceKinectOpenNI::grab(char* rgb, char* depth)
+void SourceKinectOpenNI::grab()
 {
     check(p->ctx.WaitAnyUpdateAll());
+}
+
+void SourceKinectOpenNI::startImage()
+{
+    check(p->image.StartGenerating());
+}
+
+void SourceKinectOpenNI::startDepth()
+{
+    check(p->depth.StartGenerating());
+}
+
+void SourceKinectOpenNI::startIr()
+{
+    check(p->ir.StartGenerating());
+}
+
+void SourceKinectOpenNI::stopAll()
+{
+    check(p->ctx.StopGeneratingAll());
+}
+
+void SourceKinectOpenNI::getImage(char* rgb)
+{
     const char* buffer_rgb = (const char*)p->image.GetImageMap();
     std::copy(buffer_rgb, buffer_rgb + width_ * height_ * 3, rgb);
+}
+
+void SourceKinectOpenNI::getDepth(char* depth)
+{
     const char* buffer_depth = (const char*)p->depth.GetDepthMap();
     std::copy(buffer_depth, buffer_depth + width_ * height_ * 2, depth);
+}
+
+void SourceKinectOpenNI::getIr(char* ir)
+{
+    const char* buffer = (const char*)p->ir.GetIRMap();
+    std::copy(buffer, buffer + width_ * height_ * 2, ir);
 }
 
 int SourceKinectOpenNI::width() const

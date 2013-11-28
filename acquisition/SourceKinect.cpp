@@ -31,20 +31,39 @@ SourceKinect::SourceKinect(const int id) :
 SourceKinect::~SourceKinect()
 {}
 
-void SourceKinect::grab(char* rgb, char* depth)
+void SourceKinect::grab()
 {
-    cv::Mat rgb_mat, depth_mat;
     if (kinect->grab() == false)
         throw std::runtime_error("Unable to grab frame from device");
+}
+
+void SourceKinect::startIr()
+{
+    throw std::runtime_error("This current implementation doesn't support the IR camera.");
+}
+
+void SourceKinect::getImage(char* rgb)
+{
+    cv::Mat rgb_mat;
     if (kinect->retrieve(rgb_mat, CV_CAP_OPENNI_BGR_IMAGE) == false)
         throw std::runtime_error("Unable to retrieve RGB image from the device");
-    if (kinect->retrieve(depth_mat, CV_CAP_OPENNI_DEPTH_MAP) == false)
-        throw std::runtime_error("Unable to retrieve depth image from the device");
     if (rgb_mat.channels() != 3)
         throw std::runtime_error("RGB image grabbed from the device is not a 3-channels image");
     cv::cvtColor(rgb_mat, rgb_mat, CV_BGR2RGB);
     std::copy(rgb_mat.ptr(), rgb_mat.ptr() + 3 * 640 * 480, rgb);
+}
+
+void SourceKinect::getDepth(char* depth)
+{
+    cv::Mat depth_mat;
+    if (kinect->retrieve(depth_mat, CV_CAP_OPENNI_DEPTH_MAP) == false)
+        throw std::runtime_error("Unable to retrieve depth image from the device");
     std::copy(depth_mat.ptr(), depth_mat.ptr() + 2 * 640 * 480, depth);
+}
+
+void SourceKinect::getIr(char* ir)
+{
+    throw std::runtime_error("This current implementation doesn't support the IR camera.");
 }
 
 int SourceKinect::width() const

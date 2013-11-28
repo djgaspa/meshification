@@ -82,7 +82,9 @@ void QtAcquisition::process_frame()
 {
     using clock = std::chrono::high_resolution_clock;
     std::vector<char> buffer_depth(2 * width * height), buffer_rgb(3 * width * height);
-    camera->grab(buffer_rgb.data(), buffer_depth.data());
+    camera->grab();
+    camera->getImage(buffer_rgb.data());
+    camera->getDepth(buffer_depth.data());
     const auto t0 = clock::now();
     std::vector<unsigned> tri;
     std::vector<float> ver;
@@ -108,6 +110,8 @@ void QtAcquisition::process_frame()
 
 void QtAcquisition::setup()
 {
+    camera->startImage();
+    camera->startDepth();
     timer_id = startTimer(0);
 }
 

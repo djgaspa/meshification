@@ -31,7 +31,11 @@ class SourceKinect : public Source
 public:
     SourceKinect(const int id = 0);
     ~SourceKinect();
-    void grab(char* rgb, char* depth) override;
+    void grab() override;
+    void startIr() override;
+    void getImage(char* rgb) override;
+    void getDepth(char* depth) override;
+    void getIr(char *ir) override;
     int width() const override;
     int height() const override;
 };

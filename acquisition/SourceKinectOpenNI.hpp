@@ -32,7 +32,14 @@ class SourceKinectOpenNI : public Source
 public:
     SourceKinectOpenNI(const int id = 0);
     ~SourceKinectOpenNI();
-    void grab(char* rgb, char* depth) override;
+    void grab() override;
+    void startImage() override;
+    void startDepth() override;
+    void startIr() override;
+    void stopAll() override;
+    void getImage(char* rgb) override;
+    void getDepth(char* depth) override;
+    void getIr(char* ir) override;
     int width() const override;
     int height() const override;
     std::string get_serial() const override;

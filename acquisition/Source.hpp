@@ -24,7 +24,14 @@ class Source
 {
 public:
     virtual ~Source() {}
-    virtual void grab(char* rgb, char* depth) = 0;
+    virtual void grab() = 0;
+    virtual void startImage() {};
+    virtual void startDepth() {};
+    virtual void startIr() {};
+    virtual void stopAll() {};
+    virtual void getImage(char* rgb) = 0;
+    virtual void getDepth(char* depth) = 0;
+    virtual void getIr(char* ir) = 0;
     virtual int width() const = 0;
     virtual int height() const = 0;
     virtual std::string get_serial() const {
