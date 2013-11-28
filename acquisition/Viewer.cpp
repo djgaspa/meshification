@@ -125,6 +125,9 @@ void Viewer::init()
     const auto uniform_texture = glGetUniformLocation(prog, "camera_texture");
     glProgramUniform1i(prog, uniform_texture, 0);
     startAnimation();
+    camera()->setPosition(qglviewer::Vec(0, 0, -2));
+    camera()->setViewDirection(qglviewer::Vec(0, 0, 1));
+    camera()->setUpVector(qglviewer::Vec(0, -1, 0));
 }
 
 void Viewer::draw()
