@@ -19,6 +19,11 @@ Viewer::~Viewer()
     glDeleteVertexArrays(1, vao);
 }
 
+void Viewer::setModelMatrix(std::vector<float> m)
+{
+    glProgramUniformMatrix4fv(prog, uniform_model_matrix, 1, GL_FALSE, m.data());
+}
+
 void Viewer::load(QtModelDescriptor data)
 {
     glBindVertexArray(vao[0]);
@@ -121,9 +126,12 @@ void Viewer::init()
     uniform_K = glGetUniformLocation(prog, "K");
     uniform_T = glGetUniformLocation(prog, "T");
     uniform_R = glGetUniformLocation(prog, "R");
-    uniform_mvp_matrix = glGetUniformLocation(prog, "mvp_matrix");
+    uniform_vp_matrix = glGetUniformLocation(prog, "vp_matrix");
+    uniform_model_matrix = glGetUniformLocation(prog, "model_matrix");
     const auto uniform_texture = glGetUniformLocation(prog, "camera_texture");
     glProgramUniform1i(prog, uniform_texture, 0);
+    Eigen::Matrix4f identity = Eigen::Matrix4f::Identity();
+    glProgramUniformMatrix4fv(prog, uniform_model_matrix, 1, GL_FALSE, identity.data());
     startAnimation();
     camera()->setPosition(qglviewer::Vec(0, 0, -2));
     camera()->setViewDirection(qglviewer::Vec(0, 0, 1));
@@ -134,13 +142,13 @@ void Viewer::draw()
 {
     if (n_elements == 0)
         return;
-    Eigen::Matrix4d mvp_matrix;
-    camera()->getModelViewProjectionMatrix(mvp_matrix.data());
-    Eigen::Matrix4f m = mvp_matrix.cast<float>();
+    Eigen::Matrix4d vp_matrix;
+    camera()->getModelViewProjectionMatrix(vp_matrix.data());
+    Eigen::Matrix4f m = vp_matrix.cast<float>();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
     glUseProgram(prog);
-    glUniformMatrix4fv(uniform_mvp_matrix, 1, GL_FALSE, m.data());
+    glUniformMatrix4fv(uniform_vp_matrix, 1, GL_FALSE, m.data());
     glBindVertexArray(vao[0]);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

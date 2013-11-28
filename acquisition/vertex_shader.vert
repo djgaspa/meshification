@@ -6,7 +6,8 @@ uniform float camera_centre_y;
 uniform float K[5];
 uniform vec3 T;
 uniform mat3 R;
-uniform mat4 mvp_matrix;
+uniform mat4 vp_matrix;
+uniform mat4 model_matrix;
 uniform sampler2DRect camera_texture;
 layout(location = 0) in vec3 vertex;
 out vec2 tex_coord;
@@ -15,7 +16,7 @@ void main()
 {
     vec4 v = vec4(vertex, 1.0f);
     ivec2 size = textureSize(camera_texture);
-    gl_Position = mvp_matrix * v;
+    gl_Position = vp_matrix * model_matrix * v;
     vec3 vt = R * vertex + T;
 
     float r2, r4, r6, a1, a2, a3, cdist;
