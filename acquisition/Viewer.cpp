@@ -40,7 +40,6 @@ void Viewer::load(QtModelDescriptor data)
     glProgramUniform3fv(prog, uniform_T, 1, data.t.data());
     glProgramUniformMatrix3fv(prog, uniform_R, 1, GL_FALSE, data.r.data());
     n_elements = data.tri.size();
-    updateGL();
 }
 
 void Viewer::init()
@@ -125,6 +124,7 @@ void Viewer::init()
     uniform_mvp_matrix = glGetUniformLocation(prog, "mvp_matrix");
     const auto uniform_texture = glGetUniformLocation(prog, "camera_texture");
     glProgramUniform1i(prog, uniform_texture, 0);
+    startAnimation();
 }
 
 void Viewer::draw()
