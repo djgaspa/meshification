@@ -20,6 +20,7 @@
 #include <chrono>
 #include <QSharedPointer>
 #include <QTimerEvent>
+#include <Eigen/Dense>
 #include <opencv2/opencv.hpp>
 #include "QtAcquisition.hpp"
 #include "DepthMeshifier.hpp"
@@ -28,9 +29,17 @@
 #include "SourceKinectOpenNI.hpp"
 #include "../common/AsyncWorker.hpp"
 
+Q_DECLARE_METATYPE(std::vector<float>)
+
+struct QtAcquisition::CameraParams
+{
+    cv::Mat ir_camera_matrix, ir_distortion_coefficients;
+};
+
 QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, QObject *parent) :
     QObject(parent),
     camera(new SourceKinectOpenNI(cam_id)),
+    camera_params(new CameraParams),
     calib_file(camera->get_serial() + ".yml"),
     meshify(new DepthMeshifier(calib_file)),
     consume(new Consumer(address, name, calib_file)),
@@ -41,6 +50,7 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
     k(5), t(3), r(9)
 {
     qRegisterMetaType<RgbBuffer>("RgbBuffer");
+    qRegisterMetaType<std::vector<float>>();
     cv::FileStorage fs(calib_file, cv::FileStorage::READ);
     if (fs.isOpened() == false) {
         std::ostringstream error;
@@ -66,6 +76,8 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
     for (int i = 0; i < 5; ++i)
         k[i] = mat_k.at<double>(i);
     std::cout << "RGB Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
+    fs["irCameraMatrix"] >> camera_params->ir_camera_matrix;
+    fs["irDistCoeffs"] >> camera_params->ir_distortion_coefficients;
 }
 
 QtAcquisition::~QtAcquisition()
@@ -73,9 +85,11 @@ QtAcquisition::~QtAcquisition()
 
 void QtAcquisition::timerEvent(QTimerEvent* e)
 {
-    if (e->timerId() != timer_id)
-        return;
-    process_frame();
+    const auto id = e->timerId();
+    if (id == timer_id)
+        process_frame();
+    else if (id == timer_registration)
+        registration_frame();
 }
 
 void QtAcquisition::process_frame()
@@ -108,6 +122,49 @@ void QtAcquisition::process_frame()
     emit message(QString("Frame: %1 #T: %2 %3 ms").arg(frame_id++).arg(tri.size() / 3).arg(t));
 }
 
+static
+std::vector<cv::Point3f> genPatternObjectPoints(const cv::Size& board_size, const double patternTileSize)
+{
+    std::vector<cv::Point3f> corners;
+    for (int i = 0; i < board_size.height; ++i)
+        for (int j = 0; j < board_size.width; ++j)
+            corners.push_back(cv::Point3f(float((2 * j + i % 2) * patternTileSize), float(i * patternTileSize), 0));
+    return corners;
+}
+
+void QtAcquisition::registration_frame()
+{
+    const cv::Size pattern_size(4, 11);
+    std::vector<char> buffer(2 * width * height);
+    camera->grab();
+    camera->getIr(buffer.data());
+    cv::Mat ir(height, width, CV_16UC1, buffer.data());
+    cv::Mat ir8;
+    ir.convertTo(ir8, CV_8UC1, 2);
+    cv::Mat view;
+    cv::cvtColor(ir8, view, CV_GRAY2BGR);
+    std::vector<cv::Point2f> centers;
+    const bool found = cv::findCirclesGrid(view, pattern_size, centers, cv::CALIB_CB_ASYMMETRIC_GRID);
+    cv::drawChessboardCorners(view, pattern_size, centers, found);
+    if (found) {
+        const auto obj_points = ::genPatternObjectPoints(pattern_size, marker_size);
+        cv::Mat rvec, tvec;
+        cv::solvePnP(obj_points, centers, camera_params->ir_camera_matrix, camera_params->ir_distortion_coefficients, rvec, tvec);
+        Eigen::Vector3d r = Eigen::Map<Eigen::Vector3d>(rvec.ptr<double>());
+        Eigen::Vector3d t = Eigen::Map<Eigen::Vector3d>(tvec.ptr<double>());
+        Eigen::Affine3d a = Eigen::Affine3d::Identity();
+        a.rotate(Eigen::AngleAxisd(r.norm (), -r.normalized())).translate(-t);
+        const Eigen::Matrix4f matrix = a.matrix().cast<float>();
+        std::vector<float> m(matrix.data(), matrix.data() + 16);
+        consume->set_model_matrix(m);
+        emit modelMatrixChanged(m);
+    }
+    std::vector<char> rgb(width * height * 3);
+    cv::cvtColor(view, view, CV_BGR2RGB);
+    std::copy(view.data, view.data + width * height * 3, rgb.begin());
+    emit draw(std::move(rgb), width, height);
+}
+
 void QtAcquisition::setup()
 {
     camera->startImage();
@@ -127,12 +184,12 @@ bool QtAcquisition::isDraw2dEnabled() const
 
 bool QtAcquisition::isMarkerEnabled() const
 {
-    return consume->is_marker_tracking_enabled();
+    return is_marker_enabled;
 }
 
 double QtAcquisition::getMarkerSize() const
 {
-    return consume->get_marker_size();
+    return marker_size;
 }
 
 int QtAcquisition::nearPlane() const
@@ -197,12 +254,25 @@ void QtAcquisition::setDraw2dEnabled(bool e)
 
 void QtAcquisition::setMarkerEnabled(bool e)
 {
-    consume->enable_marker_tracking(e);
+    if (e) {
+        killTimer(timer_id);
+        camera->stopAll();
+        camera->startIr();
+        timer_registration = startTimer(0);
+    }
+    else {
+        killTimer(timer_registration);
+        camera->stopAll();
+        camera->startImage();
+        camera->startDepth();
+        timer_id = startTimer(0);
+    }
+    is_marker_enabled = e;
 }
 
 void QtAcquisition::setMarkerSize(double s)
 {
-    consume->set_marker_size(s);
+    marker_size = s;
 }
 
 void QtAcquisition::saveView()

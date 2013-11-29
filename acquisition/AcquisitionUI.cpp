@@ -113,8 +113,9 @@ try {
     t->connect(ui->sb_dilate_erode, SIGNAL(valueChanged(int)), SLOT(setDilateErode(int)));
     connect(t, SIGNAL(draw(RgbBuffer, int, int)), SLOT(draw(RgbBuffer, int, int)));
     connect(t, SIGNAL(update(QtModelDescriptor)), ui->viewer, SLOT(load(QtModelDescriptor)));
+    connect(t, SIGNAL(modelMatrixChanged(std::vector<float>)), ui->viewer, SLOT(setModelMatrix(std::vector<float>)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
-    t->setMarkerSize(settings->value("marker_size", 0.288).toDouble());
+    t->setMarkerSize(settings->value("marker_size", 0.03035).toDouble());
 } catch (const std::exception& e) {
     QMessageBox::warning(this, "Device error", e.what());
 }

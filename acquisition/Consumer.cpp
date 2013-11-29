@@ -28,10 +28,8 @@
 #include <RakNet/MessageIdentifiers.h>
 #include <RakNet/BitStream.h>
 #include <RakNet/RakString.h>
-#include <aruco/cameraparameters.h>
-#include <aruco/markerdetector.h>
 #include <Eigen/Core>
-#include <Eigen/Dense>
+#include <opencv2/opencv.hpp>
 #include "Consumer.hpp"
 #include "VideoEncoder.hpp"
 #include "../common/AsyncWorker.hpp"
@@ -42,15 +40,11 @@ Consumer::Consumer(const std::string& address, const std::string& name, const st
     name(name),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
-    cam_params(new aruco::CameraParameters),
-    marker_detector(new aruco::MarkerDetector),
-    async_video(new AsyncWorker),
-    async_marker(new AsyncWorker)
+    async_video(new AsyncWorker)
 {
     auto socket = RakNet::SocketDescriptor();
     peer->Startup(1, &socket, 1);
     connect();
-    cam_params->readFromXMLFile(calib);
     Eigen::Map<Eigen::Matrix4d>(modelview).setIdentity();
     std::ifstream calibration("calibration.txt");
     if (calibration.is_open())
@@ -59,7 +53,14 @@ Consumer::Consumer(const std::string& address, const std::string& name, const st
     cv::FileStorage fs(calib, cv::FileStorage::READ);
     if (fs.isOpened() == false)
         throw std::logic_error("Unable to open calibration file "  + calib);
-    cv::Mat tvec, rot, K;
+    cv::Mat camera_matrix, tvec, rot, K;
+    fs["image_width"] >> width;
+    fs["image_height"] >> height;
+    fs["camera_matrix"] >> camera_matrix;
+    camera_focal_x = camera_matrix.at<double>(0, 0);
+    camera_focal_y = camera_matrix.at<double>(1, 1);
+    camera_centre_x = camera_matrix.at<double>(0, 2);
+    camera_centre_y = camera_matrix.at<double>(1, 2);
     fs["T"] >> tvec;
     fs["R"] >> rot;
     fs["distortion_coefficients"] >> K;
@@ -97,7 +98,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             if (is_connected == false)
                 std::cerr << "Connection established" << std::endl;
             *address = p->systemAddress;
-            encode.reset(new VideoEncoder(cam_params->CamSize.width, cam_params->CamSize.height));
+            encode.reset(new VideoEncoder(width, height));
             is_connected = true;
             break;
         case ID_CONNECTION_ATTEMPT_FAILED:
@@ -136,31 +137,6 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         const auto t1 = clock::now();
         //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
     });
-    async_marker->begin([this, rgb] {
-        const auto t0 = clock::now();
-        std::vector<aruco::Marker> markers;
-        cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
-        //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
-        if (use_marker_tracking)
-            marker_detector->detect(frame, markers, *cam_params, marker_size, false);
-        for (auto& m : markers) {
-            m.draw(frame, cv::Scalar(255, 0, 0));
-            if (m.id != 45)
-                continue;
-            cv::Mat rot_src = m.Rvec.clone(), rot;
-            rot_src.at<float>(1, 0) *= -1.0f;
-            rot_src.at<float>(2, 0) *= -1.0f;
-            cv::Rodrigues(rot_src, rot);
-            Eigen::Matrix3d r = Eigen::Map<Eigen::Matrix3f>((float*)rot.ptr()).cast<double>();
-            Eigen::Vector3d t(-m.Tvec.at<float>(0, 0), m.Tvec.at<float>(1, 0), m.Tvec.at<float>(2, 0));
-            Eigen::Affine3d a = Eigen::Affine3d::Identity();
-            a.rotate(r).translate(t);
-            Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
-            mv_matrix = a.matrix();
-        }
-        const auto t1 = clock::now();
-        //std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
-    });
     const auto t1 = clock::now();
     const bool compression = true;
     std::stringstream model_stream(std::ios::in | std::ios::out | std::ios::binary);
@@ -180,16 +156,15 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     model_stream << std::flush;
     const std::string& model_string = model_stream.str();
     const auto t2 = clock::now();
-    async_marker->end();
     async_video->end();
     const auto t3 = clock::now();
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_ENUM));
     network_stream.Write(RakNet::RakString(name.c_str()));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 2));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 2));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 0));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 1));
+    network_stream.Write(camera_centre_x);
+    network_stream.Write(camera_centre_y);
+    network_stream.Write(camera_focal_x);
+    network_stream.Write(camera_focal_y);
     network_stream.Write(modelview);
     network_stream.Write(t);
     network_stream.Write(r);
@@ -213,4 +188,9 @@ void Consumer::save_view()
     }
     for (int i = 0; i < 16; ++i)
         calibration << modelview[i] << ' ';
+}
+
+void Consumer::set_model_matrix(const std::vector<float>& m)
+{
+    std::copy(m.begin(), m.end(), modelview);
 }

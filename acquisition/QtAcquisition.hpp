@@ -52,6 +52,10 @@ class QtAcquisition : public QObject
     Q_PROPERTY(bool backgroundSubtractionEnabled READ isBackgroundSubtractionEnabled WRITE setBackgroundSubtractionEnabled)
 
     std::unique_ptr<Source> camera;
+    struct CameraParams;
+    std::unique_ptr<CameraParams> camera_params;
+    double marker_size = 0.03035;
+    bool is_marker_enabled = false;
     const std::string calib_file;
     std::unique_ptr<DepthMeshifier> meshify;
     std::unique_ptr<Consumer> consume;
@@ -61,10 +65,11 @@ class QtAcquisition : public QObject
     float focal_x, focal_y, center_x, center_y;
     std::vector<float> k, t, r;
     int frame_id = 0;
-    int timer_id;
+    int timer_id, timer_registration;
 
     void timerEvent(QTimerEvent*) override;
     void process_frame();
+    void registration_frame();
 
 public:
     QtAcquisition(const int cam_id, const std::string& name, const std::string& address, QObject *parent = 0);
@@ -88,6 +93,7 @@ signals:
     void draw(RgbBuffer rgb, int width, int height);
     void message(QString m);
     void update(QtModelDescriptor desc);
+    void modelMatrixChanged(std::vector<float> m);
     
 public slots:
     void setup();

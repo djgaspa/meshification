@@ -30,26 +30,19 @@ class RakPeerInterface;
 class SystemAddress;
 }
 
-namespace aruco {
-class CameraParameters;
-class MarkerDetector;
-}
-
 class Consumer
 {
-    bool use_marker_tracking = false;
     std::string ip_address, name;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected = false;
-    double marker_size = 0.288;
 
-    std::unique_ptr<aruco::CameraParameters> cam_params;
-    std::unique_ptr<aruco::MarkerDetector> marker_detector;
+    int width, height;
+    float camera_focal_x, camera_focal_y, camera_centre_x, camera_centre_y;
     double modelview[16];
     float t[3], r[9], k[5];
 
-    std::unique_ptr<AsyncWorker> async_video, async_marker;
+    std::unique_ptr<AsyncWorker> async_video;
     std::unique_ptr<VideoEncoder> encode;
 
     void connect();
@@ -58,20 +51,10 @@ public:
     Consumer(const std::string& address, const std::string& name, const std::string& calib);
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
-    void set_marker_size(const double s) {
-        marker_size = s;
-    }
-    double get_marker_size() const {
-        return marker_size;
-    }
-    void enable_marker_tracking(const bool b) {
-        use_marker_tracking = b;
-    }
-    bool is_marker_tracking_enabled() const {
-        return use_marker_tracking;
-    }
     std::string get_name() const {
         return name;
     }
     void save_view();
+
+    void set_model_matrix(const std::vector<float>& m);
 };
