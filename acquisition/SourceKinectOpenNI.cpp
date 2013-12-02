@@ -206,7 +206,7 @@ int SourceKinectOpenNI::height() const
     return height_;
 }
 
-std::string SourceKinectOpenNI::get_serial() const
+std::string SourceKinectOpenNI::getSerial() const
 {
     return serial_number;
 }

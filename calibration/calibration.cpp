@@ -6,7 +6,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-#include "Kinect.hpp"
+#include "../acquisition/SourceKinectOpenNI.hpp"
 
 // parallel sensor usage:
 // RGB+DEPTH => OK
@@ -54,7 +54,7 @@ const int textHeight = 30;
 //////////////////////////////////////////////////////////////////////*/
 
 // openNI context and generator nodes
-std::unique_ptr<Kinect> kinect;
+std::unique_ptr<Source> kinect;
 
 // IR camera point correspondences (multiple views)
 std::vector<std::vector<cv::Point3f>> irObjPoints;
@@ -102,7 +102,8 @@ cv::Mat overlayCalibMat(frameSize, CV_8UC3);
 
 void acquireIr(float alpha)
 {
-    cv::Mat mat(frameSize, CV_16UC1, (unsigned char*) kinect->retrieveIr());
+    cv::Mat mat(frameSize, CV_16UC1);
+    kinect->getIr((char*)mat.data);
     mat.copyTo(irMat16);
     irMat16.convertTo(irMat8, CV_8UC1, alpha);
     cv::cvtColor(irMat8, irMat8Rgb, CV_GRAY2RGB);
@@ -110,14 +111,16 @@ void acquireIr(float alpha)
 
 void acquireDepth(float alpha)
 {
-    cv::Mat mat(frameSize, CV_16UC1, (unsigned char*) kinect->retrieveDepth());
+    cv::Mat mat(frameSize, CV_16UC1);
+    kinect->getDepth((char*)mat.data);
     mat.copyTo(depthMat16);
     depthMat16.convertTo(depthMat8, CV_8UC1, alpha);
 }
 
 void acquireRgb()
 {
-    cv::Mat rgbTemp(frameSize, CV_8UC3, (unsigned char*) kinect->retrieveImage());
+    cv::Mat rgbTemp(frameSize, CV_8UC3);
+    kinect->getImage((char*)rgbTemp.data);
     cv::cvtColor(rgbTemp, rgbMat, CV_RGB2BGR);
     cv::cvtColor(rgbTemp, rgbMatGray, CV_RGB2GRAY);
 }
@@ -291,7 +294,8 @@ void loadCalibration(const char *fname)
 
 int main()
 {
-    kinect.reset(new Kinect);
+    kinect.reset(new SourceKinectOpenNI);
+    kinect->startIr();
 
     // start in IR mode
     CalibrationMode mode = CalibrationMode::Ir;

@@ -42,5 +42,5 @@ public:
     void getIr(char* ir) override;
     int width() const override;
     int height() const override;
-    std::string get_serial() const override;
+    std::string getSerial() const override;
 };

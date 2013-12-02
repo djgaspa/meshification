@@ -34,7 +34,7 @@ public:
     virtual void getIr(char* ir) = 0;
     virtual int width() const = 0;
     virtual int height() const = 0;
-    virtual std::string get_serial() const {
+    virtual std::string getSerial() const {
         return "unknown";
     }
 };

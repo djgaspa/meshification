@@ -40,7 +40,7 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
     QObject(parent),
     camera(new SourceKinectOpenNI(cam_id)),
     camera_params(new CameraParams),
-    calib_file(camera->get_serial() + ".yml"),
+    calib_file(camera->getSerial() + ".yml"),
     meshify(new DepthMeshifier(calib_file)),
     consume(new Consumer(address, name, calib_file)),
     consumer_worker(new AsyncWorker),
