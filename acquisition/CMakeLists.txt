@@ -30,7 +30,7 @@ add_executable(acquisition ${CPP_SRC} ${UI_SRC} ${RC_SRC} main.cpp
     Viewer.hpp Viewer.cpp
 )
 target_link_libraries(acquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${Boost_LIBRARIES}
-    ${QT_LIBRARIES} ${QGLVIEWER_LIBRARY} ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} usb-1.0)
+    ${QT_LIBRARIES} ${QGLVIEWER_LIBRARY} ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${USB_LIBRARY})
 if (WIN32)
         target_link_libraries(acquisition ws2_32)
 endif()
