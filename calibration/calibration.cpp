@@ -296,6 +296,7 @@ int main()
 {
     kinect.reset(new SourceKinectOpenNI);
     kinect->startIr();
+    std::cout << "Calibrating the device: " << kinect->getSerial() << std::endl;
 
     // start in IR mode
     CalibrationMode mode = CalibrationMode::Ir;

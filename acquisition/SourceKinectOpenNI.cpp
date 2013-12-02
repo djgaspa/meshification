@@ -119,6 +119,35 @@ std::pair<int, int> get_bus_address(const xn::NodeInfo& deviceNode)
     return std::make_pair(std::atoi(bus_string.c_str()), device);
 }
 
+static
+std::string get_serial_number_windows(xn::NodeInfo& device)
+{
+    std::istringstream is(device.GetCreationInfo());
+    is.ignore(1024, '#');
+    is.ignore(1024, '#');
+    std::string serial;
+    std::getline(is, serial, '#');
+    std::transform(serial.begin(), serial.end(), serial.begin(), ::toupper);
+    return serial;
+}
+
+static
+std::string get_serial_number_linux(xn::NodeInfo& device)
+{
+    const auto bus_address = ::get_bus_address(device);
+    return ::get_serial_number(bus_address.first, bus_address.second);
+}
+
+static
+std::string get_serial_number(xn::NodeInfo& device)
+{
+#ifdef _WIN32
+    return ::get_serial_number_windows(device);
+#else
+    return ::get_serial_number_linux(device);
+#endif
+}
+
 SourceKinectOpenNI::SourceKinectOpenNI(const int id) :
     p(new Impl)
 {
@@ -134,8 +163,7 @@ SourceKinectOpenNI::SourceKinectOpenNI(const int id) :
         throw std::runtime_error(err.str());
     }
     xn::NodeInfo deviceNode = *it;
-    const auto bus_address = get_bus_address(deviceNode);
-    serial_number = ::get_serial_number(bus_address.first, bus_address.second);
+    serial_number = ::get_serial_number(deviceNode);
     check(p->ctx.CreateProductionTree(deviceNode));
     check(p->ctx.RunXmlScript(xml_config.c_str()));
     check(p->ctx.StopGeneratingAll());
