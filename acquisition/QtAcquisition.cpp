@@ -330,7 +330,13 @@ void QtAcquisition::setBackgroundSubtractionEnabled(bool e)
     meshify->is_background_subtraction_enabled = e;
 }
 
+std::vector<float> QtAcquisition::getModelMatrix() const
+{
+    return consume->get_model_matrix();
+}
+
 void QtAcquisition::setAddress(QString name, QString address)
 {
     consume.reset(new Consumer(address.toStdString(), name.toStdString(), calib_file));
+    emit modelMatrixChanged(consume->get_model_matrix());
 }

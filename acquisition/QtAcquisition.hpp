@@ -113,4 +113,5 @@ public slots:
     void setApproxDP(int a);
     void setDilateErode(int s);
     void setBackgroundSubtractionEnabled(bool e);
+    std::vector<float> getModelMatrix() const;
 };

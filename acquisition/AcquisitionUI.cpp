@@ -116,6 +116,7 @@ try {
     connect(t, SIGNAL(modelMatrixChanged(std::vector<float>)), ui->viewer, SLOT(setModelMatrix(std::vector<float>)));
     connect(t, SIGNAL(message(QString)), SLOT(message(QString)));
     t->setMarkerSize(settings->value("marker_size", 0.03035).toDouble());
+    ui->viewer->setModelMatrix(t->getModelMatrix());
 } catch (const std::exception& e) {
     QMessageBox::warning(this, "Device error", e.what());
 }
