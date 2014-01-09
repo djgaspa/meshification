@@ -27,6 +27,7 @@
 #include "Consumer.hpp"
 #include "SourceKinect.hpp"
 #include "SourceKinectOpenNI.hpp"
+#include "SourceFreenect.hpp"
 #include "../common/AsyncWorker.hpp"
 
 Q_DECLARE_METATYPE(std::vector<float>)
@@ -38,7 +39,7 @@ struct QtAcquisition::CameraParams
 
 QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const std::string &address, QObject *parent) :
     QObject(parent),
-    camera(new SourceKinectOpenNI(cam_id)),
+    camera(new SourceFreenect(cam_id)),
     camera_params(new CameraParams),
     calib_file(camera->getSerial() + ".yml"),
     meshify(new DepthMeshifier(calib_file)),
@@ -76,8 +77,8 @@ QtAcquisition::QtAcquisition(const int cam_id, const std::string &name, const st
     for (int i = 0; i < 5; ++i)
         k[i] = mat_k.at<double>(i);
     std::cout << "RGB Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
-    fs["irCameraMatrix"] >> camera_params->ir_camera_matrix;
-    fs["irDistCoeffs"] >> camera_params->ir_distortion_coefficients;
+    fs["ir_camera_matrix"] >> camera_params->ir_camera_matrix;
+    fs["ir_distortion_coefficients"] >> camera_params->ir_distortion_coefficients;
 }
 
 QtAcquisition::~QtAcquisition()
@@ -135,12 +136,10 @@ std::vector<cv::Point3f> genPatternObjectPoints(const cv::Size& board_size, cons
 void QtAcquisition::registration_frame()
 {
     const cv::Size pattern_size(4, 11);
-    std::vector<char> buffer(2 * width * height);
+    std::vector<char> buffer(1280 * 1024);
     camera->grab();
     camera->getIr(buffer.data());
-    cv::Mat ir(height, width, CV_16UC1, buffer.data());
-    cv::Mat ir8;
-    ir.convertTo(ir8, CV_8UC1, 2);
+    cv::Mat ir8(1024, 1280, CV_8UC1, buffer.data());
     cv::Mat view;
     cv::cvtColor(ir8, view, CV_GRAY2BGR);
     std::vector<cv::Point2f> centers;
@@ -161,7 +160,9 @@ void QtAcquisition::registration_frame()
     }
     std::vector<char> rgb(width * height * 3);
     cv::cvtColor(view, view, CV_BGR2RGB);
-    std::copy(view.data, view.data + width * height * 3, rgb.begin());
+    cv::Mat view_resized;
+    cv::resize(view, view_resized, cv::Size(640, 480));
+    std::copy(view_resized.data, view_resized.data + width * height * 3, rgb.begin());
     emit draw(std::move(rgb), width, height);
 }
 
