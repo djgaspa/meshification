@@ -57,4 +57,5 @@ public:
     void save_view();
 
     void set_model_matrix(const std::vector<float>& m);
+    std::vector<float> get_model_matrix() const;
 };

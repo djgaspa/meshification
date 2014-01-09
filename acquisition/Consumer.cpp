@@ -194,3 +194,10 @@ void Consumer::set_model_matrix(const std::vector<float>& m)
 {
     std::copy(m.begin(), m.end(), modelview);
 }
+
+std::vector<float> Consumer::get_model_matrix() const
+{
+    std::vector<float>m(16);
+    std::copy(modelview, modelview + 16, m.begin());
+    return m;
+}
