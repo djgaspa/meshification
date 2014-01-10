@@ -176,11 +176,7 @@ Device::Device(const int i)
     }
     camera_serial = attr[i].camera_serial;
     ::freenect_free_device_attributes(attr);
-    if (::freenect_open_device(ctx, &dev, i) < 0)
-        throw std::runtime_error("Error opening the Kinect device");
-    ::freenect_set_user(dev, this);
-    ::freenect_set_video_callback(dev, video_cb);
-    ::freenect_set_depth_callback(dev, depth_cb);
+
     const std::string calibration = camera_serial + ".yml";
     cv::FileStorage in(calibration, cv::FileStorage::READ);
     if (in.isOpened() == false)
@@ -191,6 +187,12 @@ Device::Device(const int i)
 
     for (int i = 0; i < n_values; ++i)
         disparity_to_depth[i] = static_cast<unsigned short>(1000.0 / (a * i + b));
+
+    if (::freenect_open_device(ctx, &dev, i) < 0)
+        throw std::runtime_error("Error opening the Kinect device");
+    ::freenect_set_user(dev, this);
+    ::freenect_set_video_callback(dev, video_cb);
+    ::freenect_set_depth_callback(dev, depth_cb);
 }
 
 Device::~Device()
@@ -263,6 +265,7 @@ void Device::stopVideo()
     while (data.completed == false)
         data.c.wait(l);
     is_video_running = false;
+    got_video = false;
 }
 
 void Device::stopDepth()
@@ -279,6 +282,7 @@ void Device::stopDepth()
     while (data.completed == false)
         data.c.wait(l);
     is_depth_running = false;
+    got_depth = false;
 }
 
 void Device::waitAll()
