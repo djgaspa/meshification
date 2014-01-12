@@ -15,7 +15,7 @@ Viewer::Viewer(const int w, const int h, QWidget* parent):
 
 Viewer::~Viewer()
 {
-    xvr_receiver_destroy();
+    ::xvr_receiver_destroy();
 }
 
 void Viewer::init()
@@ -44,13 +44,13 @@ void Viewer::init()
     camera()->setFOVToFitScene();
     startAnimation();
 
-    xvr_receiver_init();
-    xvr_receiver_load_static("test2.ply");
+    ::xvr_receiver_init();
+    ::xvr_receiver_load_static("test2.ply");
 }
 
 void Viewer::draw()
 {
-    xvr_receiver_draw();
+    ::xvr_receiver_draw();
 }
 
 void Viewer::keyPressEvent(QKeyEvent* e)
