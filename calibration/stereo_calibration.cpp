@@ -67,7 +67,7 @@ int main(int argc, char** argv)
     Eigen::Vector3d r = Eigen::Map<Eigen::Vector3d>(rvec.ptr<double>());
     Eigen::Vector3d t = Eigen::Map<Eigen::Vector3d>(T.ptr<double>());
     Eigen::Affine3d a = Eigen::Affine3d::Identity();
-    a.rotate(Eigen::AngleAxisd(r.norm (), r.normalized())).translate(t);
+    a.translate(t).rotate(Eigen::AngleAxisd(r.norm (), r.normalized()));
     const Eigen::Matrix4f matrix = a.matrix().cast<float>();
-    std::cout << "OpenGL transformation matrix:\n" << matrix << std::endl;
+    std::cout << "OpenGL transformation matrix:\n" << matrix.transpose() << std::endl;
 }
