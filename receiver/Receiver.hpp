@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/thread.hpp>
@@ -9,11 +10,16 @@
 
 class Model;
 struct Data3d;
+struct Peer;
+
+namespace RakNet {
+struct Packet;
+}
 
 class Receiver
 {
-    boost::thread t;
-    bool is_running = false;
+    boost::thread t, thread_play;
+    bool is_running = false, is_play_running = false;
 
     using Mutex = boost::mutex;
     using Lock = boost::unique_lock<Mutex>;
@@ -24,13 +30,17 @@ class Receiver
 
     std::unordered_map<std::uint64_t, std::shared_ptr<Model>> models;
 
-    void run();
+    std::unordered_map<std::uint64_t, std::shared_ptr<Peer>> peers;
+    void run(const std::string& filename);
+    void play(const std::string& filename);
+    void process_packet(std::shared_ptr<RakNet::Packet> p);
 
 public:
     Receiver();
     ~Receiver();
     static void init();
-    void start();
+    void start(const std::string& record_filename = "");
+    void start_play(const std::string& filename);
     void stop();
     void draw();
 

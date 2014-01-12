@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QFileDialog>
 #include "Viewer.hpp"
 #include "../receiver/xvr_receiver.h"
 
@@ -46,6 +47,7 @@ void Viewer::init()
 
     ::xvr_receiver_init();
     ::xvr_receiver_load_static("test2.ply");
+    ::xvr_receiver_start();
 }
 
 void Viewer::draw()
@@ -96,6 +98,18 @@ void Viewer::keyPressEvent(QKeyEvent* e)
         xvr_receiver_translate(selected_source.c_str(), 0.0, 0.01, 0.0);
     else if (e->key() == Qt::Key_D)
         xvr_receiver_translate(selected_source.c_str(), 0.0, -0.01, 0.0);
+    else if (e->key() == Qt::Key_P) {
+        const QString filename = QFileDialog::getOpenFileName(this, "Open a record file", ".", "Records (*.beaming)");
+        if (filename.isEmpty() == false)
+            ::xvr_receiver_start_play(filename.toStdString().c_str());
+    }
+    else if (e->key() == Qt::Key_L) {
+        const QString filename = QFileDialog::getSaveFileName(this, "Save the record file as", ".", "Records (*.beaming)");
+        if (filename.isEmpty() == false)
+            ::xvr_receiver_start_record(filename.toStdString().c_str());
+    }
+    else if (e->key() == Qt::Key_O)
+        ::xvr_receiver_start();
     else
         QGLViewer::keyPressEvent(e);
 }

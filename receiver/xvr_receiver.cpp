@@ -13,7 +13,26 @@ void xvr_receiver_init()
 {
     Receiver::init();
     p.reset(new Receiver);
+}
+
+void xvr_receiver_start()
+{
     p->start();
+}
+
+void xvr_receiver_start_record(const char* fname)
+{
+    p->start(fname);
+}
+
+void xvr_receiver_start_play(const char* fname)
+{
+    p->start_play(fname);
+}
+
+void xvr_receiver_stop()
+{
+    p->stop();
 }
 
 void xvr_receiver_draw()
