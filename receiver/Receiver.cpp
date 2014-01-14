@@ -102,7 +102,8 @@ void Receiver::play(const std::string& filename)
             continue;
         }
         process_packet(p);
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        const int delay = 30 / std::max(1, (int)peers.size());
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 }
 
