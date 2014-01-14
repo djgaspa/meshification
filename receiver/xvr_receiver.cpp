@@ -35,11 +35,21 @@ void xvr_receiver_stop()
     p->stop();
 }
 
-void xvr_receiver_draw()
+void xvr_receiver_draw_dynamic()
 {
     p->draw();
+}
+
+void xvr_receiver_draw_static()
+{
     for (const auto& m : static_models)
         m.draw();
+}
+
+void xvr_receiver_draw()
+{
+    xvr_receiver_draw_dynamic();
+    xvr_receiver_draw_static();
 }
 
 void xvr_receiver_destroy()

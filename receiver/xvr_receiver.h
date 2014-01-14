@@ -6,6 +6,8 @@ void xvr_receiver_start();
 void xvr_receiver_start_record(const char* fname);
 void xvr_receiver_start_play(const char* fname);
 void xvr_receiver_stop();
+void xvr_receiver_draw_dynamic();
+void xvr_receiver_draw_static();
 void xvr_receiver_draw();
 void xvr_receiver_load_static(const char* fname);
 void xvr_receiver_destroy();
