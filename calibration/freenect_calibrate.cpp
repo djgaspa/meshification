@@ -295,20 +295,24 @@ int main()
         f << "T" << T;
         f << "image_width" << 640;
         f << "image_height" << 480;
-        cv::Mat midres_rgb_camera_matrix = rgb_camera_matrix.clone();
-        midres_rgb_camera_matrix.at<double>(0, 0) /= 2.0;
-        midres_rgb_camera_matrix.at<double>(1, 1) /= 2.0;
-        midres_rgb_camera_matrix.at<double>(0, 2) /= 2.0;
-        midres_rgb_camera_matrix.at<double>(1, 2) /= 2.0;
-        f << "camera_matrix" << midres_rgb_camera_matrix;
-        f << "distortion_coefficients" << rgb_distortion_coefficients;
-        cv::Mat midres_ir_camera_matrix = ir_camera_matrix.clone();
-        midres_ir_camera_matrix.at<double>(0, 0) /= 2.0;
-        midres_ir_camera_matrix.at<double>(1, 1) /= 2.0;
-        midres_ir_camera_matrix.at<double>(0, 2) = midres_ir_camera_matrix.at<double>(0, 2) / 2.0 - 4.8;
-        midres_ir_camera_matrix.at<double>(1, 2) = midres_ir_camera_matrix.at<double>(1, 2) / 2.0 - 14.0 - 3.9;
-        f << "irCameraMatrix" << midres_ir_camera_matrix;
-        f << "irDistCoeffs" << ir_distortion_coefficients;
+        if (rgb_camera_matrix.empty() == false) {
+            cv::Mat midres_rgb_camera_matrix = rgb_camera_matrix.clone();
+            midres_rgb_camera_matrix.at<double>(0, 0) /= 2.0;
+            midres_rgb_camera_matrix.at<double>(1, 1) /= 2.0;
+            midres_rgb_camera_matrix.at<double>(0, 2) /= 2.0;
+            midres_rgb_camera_matrix.at<double>(1, 2) /= 2.0;
+            f << "camera_matrix" << midres_rgb_camera_matrix;
+            f << "distortion_coefficients" << rgb_distortion_coefficients;
+        }
+        if (ir_camera_matrix.empty() == false) {
+            cv::Mat midres_ir_camera_matrix = ir_camera_matrix.clone();
+            midres_ir_camera_matrix.at<double>(0, 0) /= 2.0;
+            midres_ir_camera_matrix.at<double>(1, 1) /= 2.0;
+            midres_ir_camera_matrix.at<double>(0, 2) = midres_ir_camera_matrix.at<double>(0, 2) / 2.0 - 4.8;
+            midres_ir_camera_matrix.at<double>(1, 2) = midres_ir_camera_matrix.at<double>(1, 2) / 2.0 - 14.0 - 3.9;
+            f << "irCameraMatrix" << midres_ir_camera_matrix;
+            f << "irDistCoeffs" << ir_distortion_coefficients;
+        }
     };
 
     std::vector<cv::Point2f> depth_calibration_points;
