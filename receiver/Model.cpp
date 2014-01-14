@@ -10,39 +10,75 @@
 
 namespace {
 
+static
+oglplus::Program build_program();
+
 class Program
 {
-    oglplus::Program p;
+    const oglplus::Program p;
     Program();
 public:
     ~Program();
     static Program& instance();
-    void use(const bool b);
+    void use(const bool b) const;
+    const oglplus::VertexAttribArray vertex_attrib_array;
+    oglplus::Uniform<float> camera_focal_x_uniform, camera_focal_y_uniform, camera_centre_x_uniform, camera_centre_y_uniform;
+    oglplus::Uniform<float> K_uniform;
+    oglplus::Uniform<oglplus::Vec3f> T_uniform;
+    oglplus::Uniform<oglplus::Mat3f> R_uniform;
+    oglplus::Uniform<oglplus::Mat4f> mvp_matrix_uniform;
 };
 
-Program::Program()
-try {
+Program::Program() try :
+    p(build_program()),
+    vertex_attrib_array(p, "vertex"),
+    camera_focal_x_uniform(p, "camera_focal_x"),
+    camera_focal_y_uniform(p, "camera_focal_y"),
+    camera_centre_x_uniform(p, "camera_centre_x"),
+    camera_centre_y_uniform(p, "camera_centre_y"),
+    K_uniform(p, "K"),
+    T_uniform(p, "T"),
+    R_uniform(p, "R"),
+    mvp_matrix_uniform(p, "mvp_matrix")
+{
+    p.Use();
+    (p / "camera_y") = 0;
+    (p / "camera_u") = 1;
+    (p / "camera_v") = 2;
+    p.UseNone();
+} catch (const oglplus::ProgramBuildError& pbe) {
+   std::cerr <<
+                "Program build error (in " <<
+                pbe.GLSymbol() << ", " <<
+                pbe.ClassName() << " '" <<
+                pbe.ObjectDescription() << "'): " <<
+                pbe.what() << std::endl <<
+                pbe.Log() << std::endl;
+   pbe.Cleanup();
+}
+
+oglplus::Program build_program()
+{
+    oglplus::Program p;
     oglplus::VertexShader vs;
     vs.Source(
-                "#version 430 core\n"
-                "layout(location = 0) in vec3 vertex;\n"
+                "#version 140\n"
+                "in vec3 vertex;\n"
 
-                "layout(location = 0) uniform float camera_focal_x;\n"
-                "layout(location = 1) uniform float camera_focal_y;\n"
-                "layout(location = 2) uniform float camera_centre_x;\n"
-                "layout(location = 3) uniform float camera_centre_y;\n"
-                "layout(location = 4) uniform float K[5];\n"
-                "layout(location = 9) uniform vec3 T;\n"
-                "layout(location = 10) uniform mat3 R;\n"
-                "layout(location = 13) uniform mat4 mvp_matrix;\n"
-                "layout(location = 17) uniform sampler2DRect camera_y;\n"
+                "uniform float camera_focal_x;\n"
+                "uniform float camera_focal_y;\n"
+                "uniform float camera_centre_x;\n"
+                "uniform float camera_centre_y;\n"
+                "uniform float K[5];\n"
+                "uniform vec3 T;\n"
+                "uniform mat3 R;\n"
+                "uniform mat4 mvp_matrix;\n"
 
                 "out vec2 tex_coord;\n"
 
                 "void main()\n"
                 "{\n"
-                "    vec4 v = vec4(vertex, 1.0f);\n"
-                "    ivec2 size = textureSize(camera_y);\n"
+                "    vec4 v = vec4(vertex, 1.0);\n"
                 "    gl_Position = mvp_matrix * v;\n"
                 "    vec3 vt = R * vertex + T;\n"
 
@@ -67,41 +103,29 @@ try {
                 ).Compile();
     oglplus::FragmentShader fs;
     fs.Source(
-                "#version 430 core\n"
+                "#version 140\n"
+                "#extension GL_ARB_texture_rectangle : enable\n"
                 "in vec2 tex_coord;\n"
 
-                "layout(location = 17) uniform sampler2DRect camera_y;\n"
-                "layout(location = 18) uniform sampler2DRect camera_u;\n"
-                "layout(location = 19) uniform sampler2DRect camera_v;\n"
+                "uniform sampler2DRect camera_y;\n"
+                "uniform sampler2DRect camera_u;\n"
+                "uniform sampler2DRect camera_v;\n"
 
-                "layout(location = 0) out vec4 frag_color;\n"
+                "out vec4 frag_color;\n"
 
                 "void main()\n"
                 "{\n"
-                "   const highp float y = texture(camera_y, tex_coord).r;\n"
-                "   const highp float u = texture(camera_u, tex_coord / 2.0).r - 0.5;\n"
-                "   const highp float v = texture(camera_v, tex_coord / 2.0).r - 0.5;\n"
-                "   const highp float r = y + 1.402 * v;\n"
-                "   const highp float g = y - 0.344 * u - 0.714 * v;\n"
-                "   const highp float b = y + 1.772 * u;\n"
+                "   float y = texture2DRect(camera_y, tex_coord).r;\n"
+                "   float u = texture2DRect(camera_u, tex_coord / 2.0).r - 0.5;\n"
+                "   float v = texture2DRect(camera_v, tex_coord / 2.0).r - 0.5;\n"
+                "   float r = y + 1.402 * v;\n"
+                "   float g = y - 0.344 * u - 0.714 * v;\n"
+                "   float b = y + 1.772 * u;\n"
                 "   frag_color = vec4(r, g, b, 1.0);\n"
                 "}\n"
                 ).Compile();
     p.AttachShader(vs).AttachShader(fs).Link().DetachShader(fs).DetachShader(vs);
-    p.Use();
-    glUniform1i(17, 0);
-    glUniform1i(18, 1);
-    glUniform1i(19, 2);
-    p.UseNone();
-} catch(const oglplus::ProgramBuildError& pbe) {
-    std::cerr <<
-                 "Program build error (in " <<
-                 pbe.GLSymbol() << ", " <<
-                 pbe.ClassName() << " '" <<
-                 pbe.ObjectDescription() << "'): " <<
-                 pbe.what() << std::endl <<
-                 pbe.Log() << std::endl;
-    pbe.Cleanup();
+    return p;
 }
 
 Program::~Program()
@@ -114,7 +138,7 @@ Program& Program::instance()
     return prog;
 }
 
-void Program::use(const bool b)
+void Program::use(const bool b) const
 {
     if (b)
         p.Use();
@@ -133,7 +157,7 @@ Model::Model()
     Eigen::Matrix4f::Map(&matrix[0]).setIdentity();
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
-    glEnableVertexAttribArray(0);
+    Program::instance().vertex_attrib_array.Enable();
     glBindVertexArray(0);
     for (int i = 0; i < n_tex; ++i) {
         glBindTexture(GL_TEXTURE_RECTANGLE, tex[i]);
@@ -172,22 +196,23 @@ void Model::draw() const
     glPushMatrix();
     glMultMatrixf(model_matrix);
     glMultMatrixf(matrix);
-    Program::instance().use(true);
-    glUniform1f(0, focal_x);
-    glUniform1f(1, focal_y);
-    glUniform1f(2, center_x);
-    glUniform1f(3, center_y);
-    glUniform1fv(4, 5, k);
-    glUniform3fv(9, 1, t);
-    glUniformMatrix3fv(10, 1, GL_FALSE, r);
+    auto& prog = Program::instance();
+    prog.use(true);
+    prog.camera_focal_x_uniform.Set(focal_x);
+    prog.camera_focal_y_uniform.Set(focal_y);
+    prog.camera_centre_x_uniform.Set(center_x);
+    prog.camera_centre_y_uniform.Set(center_y);
+    prog.K_uniform.Set(5, k);
+    prog.T_uniform.Set(oglplus::Vec3f(t));
+    prog.R_uniform.Set(Transposed(oglplus::Mat3f(r)));
     float mv[16], pr[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, mv);
     glGetFloatv(GL_PROJECTION_MATRIX, pr);
     Eigen::Map<Eigen::Matrix4f> view_matrix(mv), proj_matrix(pr);
-    const Eigen::Matrix4f mvp_matrix = proj_matrix * view_matrix;
-    glUniformMatrix4fv(13, 1, GL_FALSE, mvp_matrix.data());
+    const Eigen::Matrix4f mvp_matrix = (proj_matrix * view_matrix);
+    prog.mvp_matrix_uniform.Set(Transposed(oglplus::Mat4f(mvp_matrix.data(), 16)));
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
-    Program::instance().use(false);
+    prog.use(false);
     glPopMatrix();
     for (int i = 0; i < n_tex; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -217,7 +242,8 @@ void Model::load(const Data3d& data)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * data.tri.size(), data.tri.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.ver.size(), data.ver.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    const auto& prog = Program::instance();
+    prog.vertex_attrib_array.Setup<oglplus::Vec3f>();
     int width, height;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glBindTexture(GL_TEXTURE_RECTANGLE, tex[0]);
