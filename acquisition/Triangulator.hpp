@@ -30,6 +30,8 @@ class Triangulator
     const cv::Mat camera_matrix;
     const double min_area, depth_coefficient;
 
+    float a = 0, b = 0, c = 0, d = 1; // Cutting plane
+
     static Triangulator* current;
     int triunsuitable_impl(double* triorg, double* tridest, double* triapex, double area);
 

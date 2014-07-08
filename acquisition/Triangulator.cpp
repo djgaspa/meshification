@@ -17,6 +17,8 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
+#include <bitset>
 #include <vector>
 #include <unordered_set>
 #include <opencv2/opencv.hpp>
@@ -217,6 +219,10 @@ Triangulator::Triangulator(const std::vector<cv::Point3f>& cloud, const cv::Size
                 cv::Point(0, size.height - 1)
     };
     add_contour(frame);
+
+    std::ifstream cutting_plane("cutting_plane.txt");
+    if (cutting_plane.is_open())
+        cutting_plane >> a >> b >> c >> d;
 }
 
 Triangulator::~Triangulator()
@@ -324,6 +330,13 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
         if (::isValid(cloud, size, p[0].x, p[0].y) == false &&
                 ::isValid(cloud, size, p[1].x, p[1].y) == false &&
                 ::isValid(cloud, size, p[2].x, p[2].y) == false)
+            continue;
+        std::bitset<3> is_in(0);
+        for (int j = 0; j < 3; ++j) {
+            const auto v = ::getPoint(cloud, size, p[j].x, p[j].y);
+            is_in[i] = (a * v.x + b * v.y + c * v.z + d) > 0;
+        }
+        if (is_in.none())
             continue;
         cv::Vec6f t;
         for (int j = 0; j < 3; ++j) {
