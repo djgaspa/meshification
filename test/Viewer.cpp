@@ -43,6 +43,7 @@ void Viewer::init()
     setSceneRadius(5);
     camera()->fitSphere(qglviewer::Vec(0, 0, 4), 5);
     camera()->setFOVToFitScene();
+    restoreStateFromFile();
     startAnimation();
 
     ::xvr_receiver_init();

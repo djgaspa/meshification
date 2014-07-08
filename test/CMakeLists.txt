@@ -9,6 +9,6 @@ find_library(QGLVIEWER_LIBRARY NAMES qglviewer-qt4 QGLViewer QGLViewer2)
 find_library(GLEW_LIBRARY NAMES GLEW glew32)
 QT4_WRAP_CPP(VIEWER_CPP Viewer.hpp)
 add_executable(test ${VIEWER_CPP} main.cpp Viewer.hpp Viewer.cpp)
-target_link_libraries(test ${QT_LIBRARIES} receiver ${QGLVIEWER_LIBRARY} ${GLEW_LIBRARY})
+target_link_libraries(test ${QT_LIBRARIES} receiver ${QGLVIEWER_LIBRARY} ${GLEW_LIBRARY} ${OPENGL_glu_LIBRARY})
 
 install(TARGETS test RUNTIME DESTINATION .)
