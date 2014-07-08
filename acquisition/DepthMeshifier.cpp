@@ -21,6 +21,8 @@
 #include <opencv/cv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <pcl/range_image/range_image_planar.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/fast_bilateral_omp.h>
 #include "DepthMeshifier.hpp"
 #include "Triangulator.hpp"
 #include "MeshBuilder.hpp"
@@ -374,8 +376,28 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         depth_max = std::max(d, depth_max);
     }
     std::vector<cv::Point3f> cloud;
-    cloud_worker->begin([&cloud, &depth, this] {
+    using Point = pcl::PointXYZ;
+    using PointCloud = pcl::PointCloud<Point>;
+    pcl::FastBilateralFilterOMP<Point> fbf;
+    fbf.setSigmaS(4.5f);
+    fbf.setSigmaR(0.03f);
+    auto input_cloud = PointCloud::Ptr(new PointCloud(640, 480));
+    PointCloud out;
+    cloud_worker->begin([&cloud, &depth, &fbf, &input_cloud, &out, this] {
         camera->reconstruct(depth, cloud);
+        for (int i = 0; i < 640 * 480; ++i) {
+            (*input_cloud)[i].x = cloud[i].x;
+            (*input_cloud)[i].y = cloud[i].y;
+            (*input_cloud)[i].z = cloud[i].z;
+        }
+        fbf.setInputCloud(input_cloud);
+        fbf.filter(out);
+        for (int i = 0; i < 640 * 480; ++i) {
+            cloud[i].x = out.points[i].x;
+            cloud[i].y = out.points[i].y;
+            cloud[i].z = out.points[i].z;
+        }
+
     });
     const double alpha = 250.0 / (depth_max - depth_min);
     const double beta = -depth_min * alpha + 5;
