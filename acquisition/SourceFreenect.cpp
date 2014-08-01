@@ -50,6 +50,7 @@ Context::Context()
         throw std::runtime_error("Error initializing freenect context");
     ::freenect_set_log_callback(ctx, &log_cb);
     ::freenect_set_log_level(ctx, ::FREENECT_LOG_NOTICE);
+    ::freenect_select_subdevices(ctx, static_cast<freenect_device_flags>(FREENECT_DEVICE_CAMERA | FREENECT_DEVICE_MOTOR));
     t = std::thread([this] {
         timeval timeout {0, 500000};
         is_running = true;
@@ -193,12 +194,14 @@ Device::Device(const int i)
     ::freenect_set_user(dev, this);
     ::freenect_set_video_callback(dev, video_cb);
     ::freenect_set_depth_callback(dev, depth_cb);
+    ::freenect_set_led(dev, LED_RED);
 }
 
 Device::~Device()
 {
     stopDepth();
     stopVideo();
+    ::freenect_set_led(dev, LED_BLINK_GREEN);
     ::freenect_close_device(dev);
 }
 
