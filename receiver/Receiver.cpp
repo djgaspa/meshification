@@ -146,12 +146,15 @@ void Receiver::process_packet(std::shared_ptr<RakNet::Packet> p)
             std::vector<char> buffer(size);
             bs.Read(buffer.data(), size);
             std::istringstream in(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
+            bool is_keyframe = false;
+            bs.Read(is_keyframe);
+            if (peer->decoder.get_n_frames() == 0 && is_keyframe == false)
+                return;
             bs.Read(size);
             buffer.resize(size);
             bs.Read(buffer.data(), size);
-            std::istringstream in_video(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
             peer->video_worker.begin([&] {
-                peer->decoder(in_video, data->y_img.data(), data->u_img.data(), data->v_img.data());
+                peer->decoder(buffer.data(), buffer.size(), data->y_img.data(), data->u_img.data(), data->v_img.data());
             });
             const bool compression = (in.get() != 0);
             if (compression) {

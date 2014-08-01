@@ -103,17 +103,14 @@ VideoEncoder::~VideoEncoder()
     delete p_;
 }
 
-void VideoEncoder::operator()(std::ostream& out, const char* buffer)
+void VideoEncoder::operator()(const char* buffer, const std::function<void (char*, const int, const bool)>& f)
 {
     p_->frame = buffer;
     check(vpx_codec_encode(&p_->ctx, p_->frame.get(), n_frames, 1, 0, VPX_DL_REALTIME));
     const vpx_codec_cx_pkt_t* pkt;
     vpx_codec_iter_t iter = 0;
     while (pkt = vpx_codec_get_cx_data(&p_->ctx, &iter)) {
-        if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
-            const unsigned size = pkt->data.frame.sz;
-            out.write((const char*)&size, sizeof(size));
-            out.write((const char*)pkt->data.frame.buf, size);
-        }
+        if (pkt->kind == VPX_CODEC_CX_FRAME_PKT)
+            f((char*)pkt->data.frame.buf, pkt->data.frame.sz, (pkt->data.frame.flags & VPX_FRAME_IS_KEY) != 0);
     }
 }

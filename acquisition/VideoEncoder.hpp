@@ -18,7 +18,7 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iosfwd>
+#include <functional>
 
 class VideoEncoder
 {
@@ -30,5 +30,5 @@ class VideoEncoder
 public:
     VideoEncoder(const int w, const int h);
     ~VideoEncoder();
-    void operator()(std::ostream& out, const char* buffer);
+    void operator()(const char* buffer, const std::function<void(char* data, const int size, const bool is_kf)>& f);
 };

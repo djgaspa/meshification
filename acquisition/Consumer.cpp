@@ -128,12 +128,13 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     using clock = std::chrono::high_resolution_clock;
     const auto t0 = clock::now();
     std::string video_string;
-    async_video->begin([this, rgb, &video_string] {
+    bool is_keyframe = false;
+    async_video->begin([this, rgb, &video_string, &is_keyframe] {
         const auto t0 = clock::now();
-        std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
-        (*encode)(video_stream, rgb.data());
-        video_stream << std::flush;
-        video_string = video_stream.str();
+        (*encode)(rgb.data(), [&video_string, &is_keyframe] (char* data, const int size, const bool is_kf) {
+            video_string.assign(data, size);
+            is_keyframe = is_kf;
+        });
         const auto t1 = clock::now();
         //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
     });
@@ -171,6 +172,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     network_stream.Write(k);
     network_stream.Write(static_cast<int>(model_string.size()));
     network_stream.Write(model_string.data(), model_string.size());
+    network_stream.Write(is_keyframe);
     network_stream.Write(static_cast<int>(video_string.size()));
     network_stream.Write(video_string.data(), video_string.size());
     peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, *address, false);

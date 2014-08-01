@@ -1,5 +1,4 @@
 #pragma once
-#include <iosfwd>
 
 class VideoDecoder
 {
@@ -11,5 +10,6 @@ class VideoDecoder
 public:
     VideoDecoder();
     ~VideoDecoder();
-    void operator()(std::istream& in, unsigned char* y_img, unsigned char* u_img, unsigned char* v_img);
+    void operator()(const char* data, const int size, unsigned char* y_img, unsigned char* u_img, unsigned char* v_img);
+    int get_n_frames() const { return n_frames; }
 };

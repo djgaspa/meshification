@@ -34,19 +34,14 @@ VideoDecoder::~VideoDecoder()
     delete p_;
 }
 
-void VideoDecoder::operator()(std::istream &in, unsigned char *y_img, unsigned char *u_img, unsigned char *v_img)
+void VideoDecoder::operator()(const char* data, const int size, unsigned char* y_img, unsigned char* u_img, unsigned char* v_img)
 {
-    if (!in)
-        throw std::logic_error("Error reading from video stream");
-    unsigned size;
-    in.read((char*)&size, sizeof(size));
-    std::vector<unsigned char> tmp(size);
-    in.read((char*)&tmp[0], tmp.size());
-    check(vpx_codec_decode(&p_->ctx, &tmp[0], tmp.size(), 0, 0));
+    check(vpx_codec_decode(&p_->ctx, (const unsigned char*)data, size, 0, 0));
     p_->iter = 0;
     auto* frame = vpx_codec_get_frame(&p_->ctx, &p_->iter);
     if (frame == 0)
         throw std::logic_error("Error decoding VPX stream. Frame not available.");
+    ++n_frames;
     const int width = frame->d_w, height = frame->d_h;
     for (int i = 0; i < width; ++i)
         for (int j = 0; j < height; ++j)
