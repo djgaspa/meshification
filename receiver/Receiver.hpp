@@ -18,8 +18,8 @@ struct Packet;
 
 class Receiver
 {
-    boost::thread t, thread_play;
-    bool is_running = false, is_play_running = false;
+    boost::thread t;
+    bool is_running = false;
 
     using Mutex = boost::mutex;
     using Lock = boost::unique_lock<Mutex>;

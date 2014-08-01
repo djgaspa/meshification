@@ -93,7 +93,7 @@ void Receiver::play(const std::string& filename)
         std::cerr << "Unable to open " << filename << std::endl;
         return;
     }
-    while (is_play_running) {
+    while (is_running) {
         std::shared_ptr<RakNet::Packet> p(new RakNet::Packet, &::destroy_packet);
         ::read_packet(in, *p);
         if (!in) {
@@ -191,8 +191,9 @@ void Receiver::start(const std::string& record_filename)
 void Receiver::start_play(const std::string& filename)
 {
     stop();
-    is_play_running = true;
-    thread_play = boost::thread(std::bind(&Receiver::play, this, filename));
+    is_running = true;
+    t = boost::thread(std::bind(&Receiver::play, this, filename));
+}
 }
 
 void Receiver::stop()
@@ -200,10 +201,6 @@ void Receiver::stop()
     if (is_running) {
         is_running = false;
         t.join();
-    }
-    if (is_play_running) {
-        is_play_running = false;
-        thread_play.join();
     }
     models.clear();
     peers.clear();
