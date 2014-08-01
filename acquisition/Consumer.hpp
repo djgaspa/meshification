@@ -42,8 +42,8 @@ class Consumer
     double modelview[16];
     float t[3], r[9], k[5];
 
-    std::unique_ptr<AsyncWorker> async_video;
     std::unique_ptr<VideoEncoder> encode;
+    std::unique_ptr<AsyncWorker> async_video;
 
     void connect();
 

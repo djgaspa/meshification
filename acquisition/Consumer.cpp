@@ -70,6 +70,7 @@ Consumer::Consumer(const std::string& address, const std::string& name, const st
         r[i] = rot.at<double>(i);
     for (int i = 0; i < 5; ++i)
         k[i] = K.at<double>(i);
+    encode.reset(new VideoEncoder(width, height));
 }
 
 Consumer::~Consumer()
@@ -98,7 +99,6 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             if (is_connected == false)
                 std::cerr << "Connection established" << std::endl;
             *address = p->systemAddress;
-            encode.reset(new VideoEncoder(width, height));
             is_connected = true;
             break;
         case ID_CONNECTION_ATTEMPT_FAILED:
@@ -110,8 +110,6 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         case ID_DISCONNECTION_NOTIFICATION:
             connect();
             std::cerr << "Connection lost" << std::endl;
-            async_video->end();
-            encode.reset();
             is_connected = false;
             break;
         case ID_NO_FREE_INCOMING_CONNECTIONS:
