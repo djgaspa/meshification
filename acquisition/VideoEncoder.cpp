@@ -51,7 +51,7 @@ class Frame
     vpx_image_t frame;
 public:
     Frame(const int w, const int h) {
-        vpx_img_alloc(&frame, VPX_IMG_FMT_YV12, w, h, 0);
+        vpx_img_alloc(&frame, VPX_IMG_FMT_I420, w, h, 0);
     }
     vpx_image_t* get() {
         return &frame;
