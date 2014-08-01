@@ -9,7 +9,7 @@
 inline static void check(const vpx_codec_err_t& err)
 {
     if (err)
-	throw std::runtime_error(vpx_codec_err_to_string(err));
+        throw std::runtime_error(vpx_codec_err_to_string(err));
 }
 
 struct VideoDecoder::Impl
@@ -30,7 +30,7 @@ VideoDecoder::~VideoDecoder()
 {
     vpx_codec_err_t err = vpx_codec_destroy(&p_->ctx);
     if (err)
-	std::cerr << "Error destroying VP8 decoder context: " << vpx_codec_err_to_string(err) << std::endl;
+        std::cerr << "Error destroying VP8 decoder context: " << vpx_codec_err_to_string(err) << std::endl;
     delete p_;
 }
 
@@ -45,7 +45,7 @@ void VideoDecoder::operator()(const char* data, const int size, unsigned char* y
     const int width = frame->d_w, height = frame->d_h;
     for (int i = 0; i < width; ++i)
         for (int j = 0; j < height; ++j)
-           y_img[i + j * width] = frame->planes[0][i + j * frame->stride[0]];
+            y_img[i + j * width] = frame->planes[0][i + j * frame->stride[0]];
     const int c_width = width / 2, c_height = height / 2;
     for (int i = 0; i < c_width; ++i)
         for (int j = 0; j < c_height; ++j) {
