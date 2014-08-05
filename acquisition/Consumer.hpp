@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <vector>
+#include <set>
 #include <string>
 
 class VideoEncoder;
@@ -37,6 +38,8 @@ class Consumer
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected = false;
 
+    std::set<RakNet::SystemAddress> addresses;
+
     int width, height;
     float camera_focal_x, camera_focal_y, camera_centre_x, camera_centre_y;
     double modelview[16];
@@ -48,7 +51,7 @@ class Consumer
     void connect();
 
 public:
-    Consumer(const std::string& address, const std::string& name, const std::string& calib);
+    Consumer(const std::string& address, const std::string& name, const std::string& calib, const unsigned short local_port = 0);
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
     std::string get_name() const {

@@ -35,15 +35,17 @@
 #include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
-Consumer::Consumer(const std::string& address, const std::string& name, const std::string& calib) :
+Consumer::Consumer(const std::string& address, const std::string& name, const std::string& calib, const unsigned short local_port) :
     ip_address(address),
     name(name),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
     async_video(new AsyncWorker)
 {
-    auto socket = RakNet::SocketDescriptor();
-    peer->Startup(1, &socket, 1);
+    auto socket = RakNet::SocketDescriptor(local_port, 0);
+    peer->Startup(11, &socket, 1);
+    peer->SetMaximumIncomingConnections(10);
+    peer->SetTimeoutTime(1000, RakNet::UNASSIGNED_SYSTEM_ADDRESS);
     connect();
     Eigen::Map<Eigen::Matrix4d>(modelview).setIdentity();
     std::ifstream calibration("calibration.txt");
@@ -99,17 +101,12 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             if (is_connected == false)
                 std::cerr << "Connection established" << std::endl;
             *address = p->systemAddress;
+            addresses.insert(*address);
             is_connected = true;
             break;
         case ID_CONNECTION_ATTEMPT_FAILED:
+            connect();
             std::cerr << "Unable to connect to the server" << std::endl;
-            is_connected = false;
-            connect();
-            break;
-        case ID_CONNECTION_LOST:
-        case ID_DISCONNECTION_NOTIFICATION:
-            connect();
-            std::cerr << "Connection lost" << std::endl;
             is_connected = false;
             break;
         case ID_NO_FREE_INCOMING_CONNECTIONS:
@@ -117,11 +114,24 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             std::cerr << "The server is full" << std::endl;
             is_connected  = false;
             break;
+        case ID_CONNECTION_LOST:
+        case ID_DISCONNECTION_NOTIFICATION:
+            if (p->systemAddress == *address) {
+                connect();
+                is_connected = false;
+            }
+            std::cerr << "Connection lost" << std::endl;
+            addresses.erase(p->systemAddress);
+            break;
+        case ID_NEW_INCOMING_CONNECTION:
+            addresses.insert(p->systemAddress);
+            std::cerr << "Incoming connection" << std::endl;
+            break;
         default:
             std::cout << "Packet received " << int(id) << std::endl;
         }
     }
-    if (is_connected == false)
+    if (addresses.empty() == true)
         return;
     using clock = std::chrono::high_resolution_clock;
     const auto t0 = clock::now();
@@ -134,7 +144,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             is_keyframe = is_kf;
         });
         const auto t1 = clock::now();
-        //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
+        //std::cout << "Video encoding: " << std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() << std::endl;
     });
     const auto t1 = clock::now();
     const bool compression = true;
@@ -173,7 +183,8 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     network_stream.Write(is_keyframe);
     network_stream.Write(static_cast<int>(video_string.size()));
     network_stream.Write(video_string.data(), video_string.size());
-    peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, *address, false);
+    for (const auto& a : addresses)
+        peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, a, false);
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
     //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
