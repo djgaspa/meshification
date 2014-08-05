@@ -36,9 +36,6 @@ class Consumer
     std::string ip_address, name;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
-    bool is_connected = false;
-
-    std::set<RakNet::SystemAddress> addresses;
 
     int width, height;
     float camera_focal_x, camera_focal_y, camera_centre_x, camera_centre_y;

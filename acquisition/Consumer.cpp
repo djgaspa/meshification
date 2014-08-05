@@ -98,40 +98,31 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         const auto id = p->data[0];
         switch (id) {
         case ID_CONNECTION_REQUEST_ACCEPTED:
-            if (is_connected == false)
-                std::cerr << "Connection established" << std::endl;
+            std::cerr << "Connection established" << std::endl;
             *address = p->systemAddress;
-            addresses.insert(*address);
-            is_connected = true;
             break;
         case ID_CONNECTION_ATTEMPT_FAILED:
             connect();
             std::cerr << "Unable to connect to the server" << std::endl;
-            is_connected = false;
             break;
         case ID_NO_FREE_INCOMING_CONNECTIONS:
             connect();
             std::cerr << "The server is full" << std::endl;
-            is_connected  = false;
             break;
         case ID_CONNECTION_LOST:
         case ID_DISCONNECTION_NOTIFICATION:
-            if (p->systemAddress == *address) {
+            if (p->systemAddress == *address)
                 connect();
-                is_connected = false;
-            }
             std::cerr << "Connection lost" << std::endl;
-            addresses.erase(p->systemAddress);
             break;
         case ID_NEW_INCOMING_CONNECTION:
-            addresses.insert(p->systemAddress);
             std::cerr << "Incoming connection" << std::endl;
             break;
         default:
             std::cout << "Packet received " << int(id) << std::endl;
         }
     }
-    if (addresses.empty() == true)
+    if (peer->NumberOfConnections() == 0)
         return;
     using clock = std::chrono::high_resolution_clock;
     const auto t0 = clock::now();
@@ -183,8 +174,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     network_stream.Write(is_keyframe);
     network_stream.Write(static_cast<int>(video_string.size()));
     network_stream.Write(video_string.data(), video_string.size());
-    for (const auto& a : addresses)
-        peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, a, false);
+    peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
     //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
