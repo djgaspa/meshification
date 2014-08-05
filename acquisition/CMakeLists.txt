@@ -1,4 +1,4 @@
-find_package(Boost COMPONENTS program_options REQUIRED)
+find_package(Boost COMPONENTS program_options thread system REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Qt4 COMPONENTS QtCore QtGui QtXml QtOpenGl)
 find_library(QGLVIEWER_LIBRARY NAMES qglviewer-qt4 QGLViewer QGLViewer2)
@@ -39,4 +39,18 @@ if (WIN32)
         target_link_libraries(acquisition ws2_32)
 endif()
 
-install(TARGETS acquisition RUNTIME DESTINATION .)
+add_executable(acquisition-cli acquisition-cli.cpp
+DepthMeshifier.hpp DepthMeshifier.cpp
+Triangulator.hpp Triangulator.cpp
+triangle.h triangle.cpp
+SurfaceReconstruction.hpp SurfaceReconstruction.cpp
+MeshBuilder.hpp MeshBuilder.cpp
+DepthFilter.hpp DepthFilter.cpp
+SourceFreenect.hpp SourceFreenect.cpp
+Consumer.hpp Consumer.cpp
+VideoEncoder.hpp VideoEncoder.cpp
+../common/AsyncWorker.hpp ../common/AsyncWorker.cpp
+)
+target_link_libraries(acquisition-cli ${Boost_LIBRARIES} ${FREENECT_LIBRARY} ${OpenCV_LIBS} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${PCL_LIBRARIES})
+
+install(TARGETS acquisition acquisition-cli RUNTIME DESTINATION .)
