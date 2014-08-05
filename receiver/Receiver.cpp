@@ -107,6 +107,52 @@ void Receiver::play(const std::string& filename)
     }
 }
 
+void Receiver::connect(const std::string& address, const unsigned short port)
+{
+    std::unique_ptr<RakNet::RakPeerInterface, decltype(&RakNet::RakPeerInterface::DestroyInstance)> peer(RakNet::RakPeerInterface::GetInstance(), &RakNet::RakPeerInterface::DestroyInstance);
+    {
+        RakNet::SocketDescriptor sd;
+        peer->Startup(1, &sd, 1);
+        peer->SetTimeoutTime(1000, RakNet::UNASSIGNED_SYSTEM_ADDRESS);
+    }
+    RakNet::SystemAddress system_address;
+    const auto connect = [this, &peer, &system_address, &address, &port] {
+        peer->CloseConnection(system_address, false);
+        peer->Connect(address.c_str(), port, 0, 0);
+    };
+    connect();
+    auto packet_deleter = [&peer](RakNet::Packet* p) {
+        peer->DeallocatePacket(p);
+    };
+
+    while (is_running) {
+        const auto ptr = peer->Receive();
+        if (ptr == 0)
+            continue;
+        std::shared_ptr<RakNet::Packet> p(ptr, packet_deleter);
+        switch (p->data[0]) {
+        case ID_CONNECTION_REQUEST_ACCEPTED: {
+            system_address = p->systemAddress;
+            peers.insert(std::make_pair(p->guid.g, std::make_shared<Peer>()));
+            Lock l(m);
+            new_models.insert(p->guid.g);
+            break;
+        }
+        case ID_CONNECTION_ATTEMPT_FAILED:
+        case ID_NO_FREE_INCOMING_CONNECTIONS:
+            std::cerr << "Unable to connect to the source" << std::endl;
+            connect();
+            break;
+        case ID_CONNECTION_LOST:
+        case ID_DISCONNECTION_NOTIFICATION:
+            if (p->systemAddress == system_address)
+                connect();
+            break;
+        }
+        process_packet(p);
+    }
+}
+
 void Receiver::process_packet(std::shared_ptr<RakNet::Packet> p)
 {
     switch (p->data[0]) {
@@ -197,6 +243,12 @@ void Receiver::start_play(const std::string& filename)
     is_running = true;
     t = boost::thread(std::bind(&Receiver::play, this, filename));
 }
+
+void Receiver::start_connect(const std::string& address, const unsigned short port)
+{
+    stop();
+    is_running = true;
+    t = boost::thread(std::bind(&Receiver::connect, this, address, port));
 }
 
 void Receiver::stop()

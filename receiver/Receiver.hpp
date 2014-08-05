@@ -33,6 +33,7 @@ class Receiver
     std::unordered_map<std::uint64_t, std::shared_ptr<Peer>> peers;
     void run(const std::string& filename);
     void play(const std::string& filename);
+    void connect(const std::string& address, const unsigned short port);
     void process_packet(std::shared_ptr<RakNet::Packet> p);
 
 public:
@@ -41,6 +42,7 @@ public:
     static void init();
     void start(const std::string& record_filename = "");
     void start_play(const std::string& filename);
+    void start_connect(const std::string& address, const unsigned short port = 12344);
     void stop();
     void draw();
 

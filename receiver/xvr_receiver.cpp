@@ -30,6 +30,11 @@ void xvr_receiver_start_play(const char* fname)
     p->start_play(fname);
 }
 
+void xvr_receiver_start_connect(const char* address)
+{
+    p->start_connect(address);
+}
+
 void xvr_receiver_stop()
 {
     p->stop();
