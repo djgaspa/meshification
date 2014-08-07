@@ -2,7 +2,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <boost/thread.hpp>
 #include <thread>
 #include <mutex>
 #include <unordered_map>
@@ -18,11 +17,11 @@ struct Packet;
 
 class Receiver
 {
-    boost::thread t;
+    std::thread t;
     bool is_running = false;
 
-    using Mutex = boost::mutex;
-    using Lock = boost::unique_lock<Mutex>;
+    using Mutex = std::mutex;
+    using Lock = std::unique_lock<Mutex>;
     Mutex m;
     std::unordered_set<std::uint64_t> new_models;
     std::unordered_set<std::uint64_t> delete_models;

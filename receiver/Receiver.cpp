@@ -233,21 +233,21 @@ void Receiver::start(const std::string& record_filename)
 {
     stop();
     is_running = true;
-    t = boost::thread(std::bind(&Receiver::run, this, record_filename));
+    t = std::thread(std::bind(&Receiver::run, this, record_filename));
 }
 
 void Receiver::start_play(const std::string& filename)
 {
     stop();
     is_running = true;
-    t = boost::thread(std::bind(&Receiver::play, this, filename));
+    t = std::thread(std::bind(&Receiver::play, this, filename));
 }
 
 void Receiver::start_connect(const std::string& address, const unsigned short port)
 {
     stop();
     is_running = true;
-    t = boost::thread(std::bind(&Receiver::connect, this, address, port));
+    t = std::thread(std::bind(&Receiver::connect, this, address, port));
 }
 
 void Receiver::stop()

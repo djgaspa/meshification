@@ -21,16 +21,18 @@
 
 #include <string>
 #include <functional>
-#include <boost/thread.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class AsyncWorker
 {
     std::function<void()> operation;
-    boost::mutex m;
-    using lock = boost::unique_lock<boost::mutex>;
-    boost::condition_variable c_ready, c_finished;
+    std::mutex m;
+    using lock = std::unique_lock<std::mutex>;
+    std::condition_variable c_ready, c_finished;
     bool is_running;
-    boost::thread t;
+    std::thread t;
 
     void run();
 
