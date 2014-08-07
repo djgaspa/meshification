@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <list>
-#include <pcl/range_image/range_image_planar.h>
 #include <RakNet/RakPeerInterface.h>
 #include <RakNet/MessageIdentifiers.h>
 #include <RakNet/BitStream.h>

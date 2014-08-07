@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <QObject>
 #include <QMetaType>
 #include "QtModelDescriptor.h"
 

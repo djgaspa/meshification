@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(meshification)
-add_definitions(-std=c++0x)
+cmake_policy(SET CMP0020 NEW)
+add_definitions(-std=c++11)
 
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)

@@ -53,4 +53,9 @@ VideoEncoder.hpp VideoEncoder.cpp
 )
 target_link_libraries(acquisition-cli ${Boost_LIBRARIES} ${FREENECT_LIBRARY} ${OpenCV_LIBS} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${PCL_LIBRARIES})
 
+if (WIN32)
+    target_link_libraries(acquisition ws2_32)
+    target_link_libraries(acquisition-cli ws2_32)
+endif()
+
 install(TARGETS acquisition acquisition-cli RUNTIME DESTINATION .)
