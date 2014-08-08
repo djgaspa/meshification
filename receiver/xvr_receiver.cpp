@@ -1,11 +1,8 @@
 #include <memory>
-#include <list>
 #include "xvr_receiver.h"
 #include "Receiver.hpp"
-#include "StaticModel.hpp"
 
 static std::unique_ptr<Receiver> p;
-static std::list<StaticModel> static_models;
 
 extern "C" {
 
@@ -40,33 +37,14 @@ void xvr_receiver_stop()
     p->stop();
 }
 
-void xvr_receiver_draw_dynamic()
-{
-    p->draw();
-}
-
-void xvr_receiver_draw_static()
-{
-    for (const auto& m : static_models)
-        m.draw();
-}
-
 void xvr_receiver_draw()
 {
-    xvr_receiver_draw_dynamic();
-    xvr_receiver_draw_static();
+    p->draw();
 }
 
 void xvr_receiver_destroy()
 {
     p.reset();
-    static_models.clear();
-}
-
-void xvr_receiver_load_static(const char* fname)
-{
-    static_models.emplace_back();
-    static_models.back().load(fname);
 }
 
 void xvr_receiver_translate(const char *name, const double x, const double y, const double z)
@@ -82,12 +60,6 @@ void xvr_receiver_rotate(const char* name, const double rad, const double x, con
 void xvr_receiver_reset_position(const char *name)
 {
     p->reset_position(name);
-}
-
-void xvr_receiver_toggle_point_smooth()
-{
-    for (auto& m : static_models)
-        m.tooglePointSmooth();
 }
 
 void xvr_receiver_save_view()
